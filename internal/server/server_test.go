@@ -1,38 +1,40 @@
 package server_test
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"context"
+	"net"
 	"testing"
 
+	pb "voodoo-case-study/gen/voodoo/v1"
 	"voodoo-case-study/internal/server"
+	"voodoo-case-study/testclient"
 )
 
-func TestHealthReturns200(t *testing.T) {
-	srv := server.New()
-
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
-	srv.ServeHTTP(w, req)
-
-	if w.Code != http.StatusOK {
-		t.Fatalf("expected 200, got %d", w.Code)
+func startServer(t *testing.T) *testclient.Client {
+	t.Helper()
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
 	}
+	srv := server.New()
+	go srv.Serve(lis) //nolint:errcheck
+	t.Cleanup(srv.Stop)
+	client, err := testclient.New(lis.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { client.Close() })
+	return client
 }
 
-func TestHealthReturnsOKBody(t *testing.T) {
-	srv := server.New()
+func TestHealthReturnsOK(t *testing.T) {
+	client := startServer(t)
 
-	req := httptest.NewRequest(http.MethodGet, "/health", nil)
-	w := httptest.NewRecorder()
-	srv.ServeHTTP(w, req)
-
-	var body map[string]string
-	if err := json.NewDecoder(w.Body).Decode(&body); err != nil {
-		t.Fatalf("could not decode response body: %v", err)
+	resp, err := client.Health(context.Background(), &pb.HealthRequest{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if body["status"] != "ok" {
-		t.Errorf("expected status=ok, got %q", body["status"])
+	if resp.Status != "ok" {
+		t.Errorf("expected status=ok, got %q", resp.Status)
 	}
 }

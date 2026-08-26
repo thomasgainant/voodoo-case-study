@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package voodoo.v1;
+
+option go_package = "voodoo-case-study/gen/voodoo/v1";
+
+// VoodooService is the gateway layer: all incoming gRPC requests are described here.
+// The router dispatches each RPC to its dedicated worker.
+service VoodooService {
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  string status = 1;
+}

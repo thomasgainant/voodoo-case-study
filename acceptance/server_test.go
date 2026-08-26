@@ -3,33 +3,35 @@
 package acceptance_test
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"context"
+	"net"
 	"testing"
 
+	pb "voodoo-case-study/gen/voodoo/v1"
 	"voodoo-case-study/internal/server"
+	"voodoo-case-study/testclient"
 )
 
 func TestHealthEndpoint(t *testing.T) {
-	ts := httptest.NewServer(server.New())
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL + "/health")
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
+	srv := server.New()
+	go srv.Serve(lis) //nolint:errcheck
+	defer srv.Stop()
 
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	client, err := testclient.New(lis.Addr().String())
+	if err != nil {
+		t.Fatal(err)
 	}
+	defer client.Close()
 
-	var body map[string]string
-	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
-		t.Fatalf("could not decode response body: %v", err)
+	resp, err := client.Health(context.Background(), &pb.HealthRequest{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if body["status"] != "ok" {
-		t.Errorf("expected status=ok, got %q", body["status"])
+	if resp.Status != "ok" {
+		t.Errorf("expected status=ok, got %q", resp.Status)
 	}
 }

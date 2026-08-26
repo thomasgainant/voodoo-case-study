@@ -1,17 +1,28 @@
 package server
 
 import (
-	"encoding/json"
-	"net/http"
+	"net"
+
+	"google.golang.org/grpc"
+
+	pb "voodoo-case-study/gen/voodoo/v1"
+	"voodoo-case-study/internal/router"
 )
 
-func New() http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", handleHealth)
-	return mux
+type Server struct {
+	grpc *grpc.Server
 }
 
-func handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+func New() *Server {
+	g := grpc.NewServer()
+	pb.RegisterVoodooServiceServer(g, router.New())
+	return &Server{grpc: g}
+}
+
+func (s *Server) Serve(lis net.Listener) error {
+	return s.grpc.Serve(lis)
+}
+
+func (s *Server) Stop() {
+	s.grpc.GracefulStop()
 }
