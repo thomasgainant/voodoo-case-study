@@ -6,6 +6,51 @@ This application is aimed to manage millions of players playing Tic-Tac-Toe.
 
 This application has to stay basic and is meant to be a demonstration. That means it is important to have a way to run the app and run the tests for it very fast. We want two layers of tests: unit and acceptance tests. They need to be updated every time a featured is added or modified.
 
+## Tic-Tac-Toe game logic
+
+The board is a 3×3 grid with cells indexed 0–8 in row-major order:
+
+```
+0 | 1 | 2
+---------
+3 | 4 | 5
+---------
+6 | 7 | 8
+```
+
+### Rules
+
+- `players[0]` (the game creator) always moves first.
+- Players alternate turns. A move consists of choosing an **empty** cell and marking it.
+- The first player to align **three marks** in a row, column, or diagonal wins.
+- If all nine cells are filled with no winner, the game ends in a **draw**.
+- No move is accepted after the game is over.
+
+### Winning lines
+
+| Type | Cells |
+|---|---|
+| Rows | [0,1,2] [3,4,5] [6,7,8] |
+| Columns | [0,3,6] [1,4,7] [2,5,8] |
+| Diagonals | [0,4,8] [2,4,6] |
+
+### Move errors
+
+| Error | Cause |
+|---|---|
+| `ErrGameNotReady` | Fewer than two players have joined |
+| `ErrNotYourTurn` | `player_id` does not hold the current turn |
+| `ErrCellOccupied` | The chosen cell is already marked |
+| `ErrInvalidCell` | Cell index is outside 0–8 |
+| `ErrGameOver` | The game has already ended (win or draw) |
+
+### Game outcome in `UpdateGameResponse`
+
+After each successful move, `UpdateGameResponse` carries:
+
+- `board` — 9 strings, each either `""` (empty) or the `player_id` who marked that cell.
+- `winner` — `""` while the game is ongoing, the winning `player_id` on a win, or `"draw"`.
+
 ## gRPC architecture
 
 The server runs on gRPC. All incoming requests are described as protobuf RPCs in `proto/voodoo/v1/voodoo.proto`, which acts as the gateway layer. Go code is generated from that file into `gen/voodoo/v1/` using `make generate` (requires `protoc` and the `protoc-gen-go`/`protoc-gen-go-grpc` plugins on PATH). Never edit files under `gen/` by hand.

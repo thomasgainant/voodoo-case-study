@@ -289,6 +289,7 @@ type UpdateGameRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
 	PlayerId      string                 `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Cell          int32                  `protobuf:"varint,3,opt,name=cell,proto3" json:"cell,omitempty"` // 0-8, row-major order
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -337,9 +338,18 @@ func (x *UpdateGameRequest) GetPlayerId() string {
 	return ""
 }
 
+func (x *UpdateGameRequest) GetCell() int32 {
+	if x != nil {
+		return x.Cell
+	}
+	return 0
+}
+
 type UpdateGameResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	Board         []string               `protobuf:"bytes,2,rep,name=board,proto3" json:"board,omitempty"`   // 9 cells: "" empty, player_id if marked
+	Winner        string                 `protobuf:"bytes,3,opt,name=winner,proto3" json:"winner,omitempty"` // "" ongoing, player_id if won, "draw"
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -377,6 +387,20 @@ func (*UpdateGameResponse) Descriptor() ([]byte, []int) {
 func (x *UpdateGameResponse) GetGameId() string {
 	if x != nil {
 		return x.GameId
+	}
+	return ""
+}
+
+func (x *UpdateGameResponse) GetBoard() []string {
+	if x != nil {
+		return x.Board
+	}
+	return nil
+}
+
+func (x *UpdateGameResponse) GetWinner() string {
+	if x != nil {
+		return x.Winner
 	}
 	return ""
 }
@@ -477,12 +501,15 @@ const file_voodoo_v1_voodoo_proto_rawDesc = "" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\"+\n" +
 	"\x10JoinGameResponse\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId\"I\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\"]\n" +
 	"\x11UpdateGameRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x1b\n" +
-	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\"-\n" +
+	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\x12\x12\n" +
+	"\x04cell\x18\x03 \x01(\x05R\x04cell\"[\n" +
 	"\x12UpdateGameResponse\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId\"\x19\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x14\n" +
+	"\x05board\x18\x02 \x03(\tR\x05board\x12\x16\n" +
+	"\x06winner\x18\x03 \x01(\tR\x06winner\"\x19\n" +
 	"\x17ListPendingGamesRequest\"5\n" +
 	"\x18ListPendingGamesResponse\x12\x19\n" +
 	"\bgame_ids\x18\x01 \x03(\tR\agameIds2\x86\x03\n" +

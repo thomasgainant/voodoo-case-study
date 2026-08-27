@@ -87,3 +87,17 @@ This needs to be tested, in the test environments. but also using cmd\client\mai
 If it is not the player's turn and he still tries to make a move, he will receive an error.
 
 This needs to be tested in unit tests as well.``
+
+### Basic Tic-Tac-Toe game logic
+
+``I want the application to describe the rules of Tic-Tac-Toe and especially the case in which players win or lose.
+
+That means the UpdateGame gRPC method will be used for making moves. 
+
+Moves mean a player, whose turn is in, chooses an empty cell inside a Tic-Tac-Toe grid that he will mark as his.
+
+Once a line of marked of cells are aligned, horizontally, vertically or in diagonal, the player wins the game.
+
+Making a move will communicate to both players the new game state.
+
+The basic rules of the game have to be tested in unit tests.``

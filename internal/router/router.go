@@ -50,13 +50,21 @@ func (r *Router) JoinGame(_ context.Context, req *pb.JoinGameRequest) (*pb.JoinG
 
 func (r *Router) UpdateGame(_ context.Context, req *pb.UpdateGameRequest) (*pb.UpdateGameResponse, error) {
 	w := r.sharder.Resolve(req.GameId)
-	if err := w.UpdateGame(req.GameId, req.PlayerId); err != nil {
-		if errors.Is(err, worker.ErrNotYourTurn) || errors.Is(err, worker.ErrGameNotReady) {
+	state, err := w.UpdateGame(req.GameId, req.PlayerId, int(req.Cell))
+	if err != nil {
+		if errors.Is(err, worker.ErrNotYourTurn) || errors.Is(err, worker.ErrGameNotReady) ||
+			errors.Is(err, worker.ErrCellOccupied) || errors.Is(err, worker.ErrInvalidCell) ||
+			errors.Is(err, worker.ErrGameOver) {
 			return nil, status.Errorf(codes.FailedPrecondition, "%v", err)
 		}
 		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
-	return &pb.UpdateGameResponse{GameId: req.GameId}, nil
+	board := state.Board()
+	return &pb.UpdateGameResponse{
+		GameId: req.GameId,
+		Board:  board[:],
+		Winner: state.Winner(),
+	}, nil
 }
 
 func (r *Router) ListPendingGames(_ context.Context, _ *pb.ListPendingGamesRequest) (*pb.ListPendingGamesResponse, error) {

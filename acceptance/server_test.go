@@ -99,7 +99,7 @@ func TestUpdateGameEndpoint(t *testing.T) {
 	created, _ := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
 	client.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
 
-	updated, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1"})
+	updated, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 0})
 	if err != nil {
 		t.Fatalf("UpdateGame failed: %v", err)
 	}
@@ -116,7 +116,7 @@ func TestUpdateGameRejectsWrongTurn(t *testing.T) {
 	created, _ := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
 	client.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
 
-	_, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2"})
+	_, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2", Cell: 0})
 	if err == nil {
 		t.Fatal("expected error when p2 plays out of turn")
 	}
@@ -129,9 +129,34 @@ func TestUpdateGameRejectsUnreadyGame(t *testing.T) {
 
 	created, _ := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
 
-	_, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1"})
+	_, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 0})
 	if err == nil {
 		t.Fatal("expected error when game has only one player")
+	}
+}
+
+func TestUpdateGameWinnerIsReturned(t *testing.T) {
+	client, teardown := newTestServer(t)
+	defer teardown()
+	ctx := context.Background()
+
+	created, _ := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	client.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	// p1 wins top row: 0, 1, 2
+	client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 0}) //nolint:errcheck
+	client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2", Cell: 3}) //nolint:errcheck
+	client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 1}) //nolint:errcheck
+	client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2", Cell: 4}) //nolint:errcheck
+	resp, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 2})
+	if err != nil {
+		t.Fatalf("winning move failed: %v", err)
+	}
+	if resp.Winner != "p1" {
+		t.Errorf("expected winner=p1, got %q", resp.Winner)
+	}
+	if len(resp.Board) != 9 {
+		t.Errorf("expected 9 board cells, got %d", len(resp.Board))
 	}
 }
 

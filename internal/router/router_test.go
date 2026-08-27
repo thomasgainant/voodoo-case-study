@@ -72,18 +72,21 @@ func TestUpdateGameReturnsGameID(t *testing.T) {
 	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
 	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
 
-	updated, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1"})
+	updated, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 0})
 	if err != nil {
 		t.Fatalf("UpdateGame failed: %v", err)
 	}
 	if updated.GameId != created.GameId {
 		t.Errorf("expected game_id=%q, got %q", created.GameId, updated.GameId)
 	}
+	if len(updated.Board) != 9 {
+		t.Errorf("expected 9 board cells, got %d", len(updated.Board))
+	}
 }
 
 func TestUpdateGameFailsForUnknownGame(t *testing.T) {
 	r := router.New()
-	_, err := r.UpdateGame(context.Background(), &pb.UpdateGameRequest{GameId: "unknown", PlayerId: "p1"})
+	_, err := r.UpdateGame(context.Background(), &pb.UpdateGameRequest{GameId: "unknown", PlayerId: "p1", Cell: 0})
 	if err == nil {
 		t.Fatal("expected error for unknown game")
 	}
@@ -94,7 +97,7 @@ func TestUpdateGameFailsWhenGameNotReady(t *testing.T) {
 	ctx := context.Background()
 	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
 
-	_, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1"})
+	_, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 0})
 	if err == nil {
 		t.Fatal("expected error when game has only one player")
 	}
@@ -106,7 +109,7 @@ func TestUpdateGameFailsWhenNotPlayersTurn(t *testing.T) {
 	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
 	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
 
-	_, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2"})
+	_, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2", Cell: 0})
 	if err == nil {
 		t.Fatal("expected error when p2 plays out of turn")
 	}
@@ -118,11 +121,49 @@ func TestUpdateGameAlternatesTurns(t *testing.T) {
 	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
 	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
 
-	moves := []string{"p1", "p2", "p1", "p2"}
-	for i, player := range moves {
-		if _, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: player}); err != nil {
-			t.Fatalf("move %d by %q failed: %v", i+1, player, err)
+	type move struct {
+		player string
+		cell   int32
+	}
+	// p1: 0, p2: 1, p1: 3, p2: 4 — no winning line
+	moves := []move{{"p1", 0}, {"p2", 1}, {"p1", 3}, {"p2", 4}}
+	for i, m := range moves {
+		if _, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: m.player, Cell: m.cell}); err != nil {
+			t.Fatalf("move %d by %q failed: %v", i+1, m.player, err)
 		}
+	}
+}
+
+func TestUpdateGameResponseIncludesWinner(t *testing.T) {
+	r := router.New()
+	ctx := context.Background()
+	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	// p1 wins top row: cells 0, 1, 2
+	r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 0}) //nolint:errcheck
+	r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2", Cell: 3}) //nolint:errcheck
+	r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 1}) //nolint:errcheck
+	r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2", Cell: 4}) //nolint:errcheck
+	resp, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 2})
+	if err != nil {
+		t.Fatalf("final move failed: %v", err)
+	}
+	if resp.Winner != "p1" {
+		t.Errorf("expected winner=p1, got %q", resp.Winner)
+	}
+}
+
+func TestUpdateGameRejectsOccupiedCell(t *testing.T) {
+	r := router.New()
+	ctx := context.Background()
+	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1", Cell: 4}) //nolint:errcheck
+	_, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2", Cell: 4})
+	if err == nil {
+		t.Fatal("expected error for occupied cell")
 	}
 }
 

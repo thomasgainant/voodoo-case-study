@@ -125,14 +125,14 @@ func TestStateCountReflectsCreatedGames(t *testing.T) {
 func TestUpdateGameFailsWhenGameNotReady(t *testing.T) {
 	w := worker.New(0)
 	state := w.CreateGame("p1")
-	if err := w.UpdateGame(state.ID, "p1"); !errors.Is(err, worker.ErrGameNotReady) {
+	if _, err := w.UpdateGame(state.ID, "p1", 0); !errors.Is(err, worker.ErrGameNotReady) {
 		t.Errorf("expected ErrGameNotReady, got %v", err)
 	}
 }
 
 func TestUpdateGameFailsForUnknownGame(t *testing.T) {
 	w := worker.New(0)
-	if err := w.UpdateGame("no-such-game", "p1"); err == nil {
+	if _, err := w.UpdateGame("no-such-game", "p1", 0); err == nil {
 		t.Fatal("expected error for unknown game")
 	}
 }
@@ -142,7 +142,7 @@ func TestUpdateGameFailsWhenNotPlayersTurn(t *testing.T) {
 	state := w.CreateGame("p1")
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
-	if err := w.UpdateGame(state.ID, "p2"); !errors.Is(err, worker.ErrNotYourTurn) {
+	if _, err := w.UpdateGame(state.ID, "p2", 0); !errors.Is(err, worker.ErrNotYourTurn) {
 		t.Errorf("expected ErrNotYourTurn, got %v", err)
 	}
 }
@@ -152,7 +152,7 @@ func TestUpdateGameSucceedsForCurrentPlayer(t *testing.T) {
 	state := w.CreateGame("p1")
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
-	if err := w.UpdateGame(state.ID, "p1"); err != nil {
+	if _, err := w.UpdateGame(state.ID, "p1", 0); err != nil {
 		t.Errorf("expected p1 to succeed on first turn, got %v", err)
 	}
 }
@@ -162,10 +162,149 @@ func TestUpdateGameAlternatesTurns(t *testing.T) {
 	state := w.CreateGame("p1")
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
-	moves := []string{"p1", "p2", "p1", "p2"}
-	for i, player := range moves {
-		if err := w.UpdateGame(state.ID, player); err != nil {
-			t.Fatalf("move %d by %q failed: %v", i+1, player, err)
+	// p1: 0, p2: 1, p1: 3, p2: 4 — no winning line
+	type move struct {
+		player string
+		cell   int
+	}
+	moves := []move{{"p1", 0}, {"p2", 1}, {"p1", 3}, {"p2", 4}}
+	for i, m := range moves {
+		if _, err := w.UpdateGame(state.ID, m.player, m.cell); err != nil {
+			t.Fatalf("move %d by %q failed: %v", i+1, m.player, err)
 		}
+	}
+}
+
+func TestUpdateGameFailsForOccupiedCell(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	w.UpdateGame(state.ID, "p1", 4) //nolint:errcheck
+	if _, err := w.UpdateGame(state.ID, "p2", 4); !errors.Is(err, worker.ErrCellOccupied) {
+		t.Errorf("expected ErrCellOccupied, got %v", err)
+	}
+}
+
+func TestUpdateGameFailsForInvalidCell(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	if _, err := w.UpdateGame(state.ID, "p1", 9); !errors.Is(err, worker.ErrInvalidCell) {
+		t.Errorf("expected ErrInvalidCell, got %v", err)
+	}
+}
+
+func TestWinDetectionRow(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	// p1 wins top row: 0,1,2
+	w.UpdateGame(state.ID, "p1", 0) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 3) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 1) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 4) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 2) //nolint:errcheck
+
+	if state.Winner() != "p1" {
+		t.Errorf("expected winner p1, got %q", state.Winner())
+	}
+}
+
+func TestWinDetectionCol(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	// p1 wins left col: 0,3,6
+	w.UpdateGame(state.ID, "p1", 0) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 1) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 3) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 2) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 6) //nolint:errcheck
+
+	if state.Winner() != "p1" {
+		t.Errorf("expected winner p1, got %q", state.Winner())
+	}
+}
+
+func TestWinDetectionDiagonal(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	// p1 wins main diagonal: 0,4,8
+	w.UpdateGame(state.ID, "p1", 0) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 1) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 4) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 2) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 8) //nolint:errcheck
+
+	if state.Winner() != "p1" {
+		t.Errorf("expected winner p1, got %q", state.Winner())
+	}
+}
+
+func TestDrawDetection(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	// Final board (no winning line):
+	// p1 O p1
+	// p1 p1 p2
+	// p2 p1 p2
+	moves := [][2]interface{}{
+		{"p1", 0}, {"p2", 1}, {"p1", 2},
+		{"p2", 5}, {"p1", 3}, {"p2", 6},
+		{"p1", 4}, {"p2", 8}, {"p1", 7},
+	}
+	for i, m := range moves {
+		if _, err := w.UpdateGame(state.ID, m[0].(string), m[1].(int)); err != nil {
+			t.Fatalf("move %d failed: %v", i+1, err)
+		}
+	}
+
+	if state.Winner() != "draw" {
+		t.Errorf("expected draw, got %q", state.Winner())
+	}
+}
+
+func TestMovesRejectedAfterGameOver(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	// p1 wins: top row
+	w.UpdateGame(state.ID, "p1", 0) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 3) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 1) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 4) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 2) //nolint:errcheck
+
+	if _, err := w.UpdateGame(state.ID, "p2", 5); !errors.Is(err, worker.ErrGameOver) {
+		t.Errorf("expected ErrGameOver, got %v", err)
+	}
+}
+
+func TestBoardReflectsMoves(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	w.UpdateGame(state.ID, "p1", 4) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 0) //nolint:errcheck
+
+	board := state.Board()
+	if board[4] != "p1" {
+		t.Errorf("expected cell 4 = p1, got %q", board[4])
+	}
+	if board[0] != "p2" {
+		t.Errorf("expected cell 0 = p2, got %q", board[0])
+	}
+	if board[1] != "" {
+		t.Errorf("expected cell 1 empty, got %q", board[1])
 	}
 }

@@ -71,14 +71,23 @@ func main() {
 	}
 	log.Printf("Pending games after join (%d): %v", len(pending.GameIds), pending.GameIds)
 
-	// Simulate two turns: player-1 moves, then player-2 moves.
-	if _, err = client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: gameID, PlayerId: "player-1"}); err != nil {
-		log.Fatalf("UpdateGame (player-1 turn) failed: %v", err)
+	// Simulate a full game: player-1 wins the top row (0,1,2), player-2 takes 3,4.
+	type move struct {
+		player string
+		cell   int32
 	}
-	log.Printf("[player-1] Made a move in game %q", gameID)
-
-	if _, err = client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: gameID, PlayerId: "player-2"}); err != nil {
-		log.Fatalf("UpdateGame (player-2 turn) failed: %v", err)
+	moves := []move{
+		{"player-1", 0},
+		{"player-2", 3},
+		{"player-1", 1},
+		{"player-2", 4},
+		{"player-1", 2},
 	}
-	log.Printf("[player-2] Made a move in game %q", gameID)
+	for _, m := range moves {
+		resp, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: gameID, PlayerId: m.player, Cell: m.cell})
+		if err != nil {
+			log.Fatalf("UpdateGame (%s, cell %d) failed: %v", m.player, m.cell, err)
+		}
+		log.Printf("[%s] Marked cell %d — board: %v  winner: %q", m.player, m.cell, resp.Board, resp.Winner)
+	}
 }

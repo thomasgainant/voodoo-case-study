@@ -29,8 +29,13 @@ message JoinGameResponse { string game_id = 1; }
 message UpdateGameRequest {
   string game_id = 1;
   string player_id = 2;
+  int32 cell = 3; // 0-8, row-major order
 }
-message UpdateGameResponse { string game_id = 1; }
+message UpdateGameResponse {
+  string game_id = 1;
+  repeated string board = 2; // 9 cells: "" empty, player_id if marked
+  string winner = 3;         // "" ongoing, player_id if won, "draw"
+}
 
 message ListPendingGamesRequest {}
 message ListPendingGamesResponse { repeated string game_ids = 1; }
