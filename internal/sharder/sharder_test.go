@@ -103,3 +103,39 @@ func TestSharderWorkersReturnsCorrectCount(t *testing.T) {
 		t.Errorf("expected %d workers, got %d", n, len(s.Workers()))
 	}
 }
+
+func TestAddPendingAppearsInList(t *testing.T) {
+	s := sharder.New(2)
+	s.AddPending("game-1")
+	ids := s.ListPending()
+	if len(ids) != 1 || ids[0] != "game-1" {
+		t.Errorf("expected [game-1], got %v", ids)
+	}
+}
+
+func TestRemovePendingDisappearsFromList(t *testing.T) {
+	s := sharder.New(2)
+	s.AddPending("game-1")
+	s.RemovePending("game-1")
+	if ids := s.ListPending(); len(ids) != 0 {
+		t.Errorf("expected empty pending list, got %v", ids)
+	}
+}
+
+func TestListPendingIsEmptyInitially(t *testing.T) {
+	s := sharder.New(2)
+	if ids := s.ListPending(); len(ids) != 0 {
+		t.Errorf("expected empty pending list on new sharder, got %v", ids)
+	}
+}
+
+func TestListPendingReturnsAllPendingGames(t *testing.T) {
+	s := sharder.New(2)
+	s.AddPending("game-a")
+	s.AddPending("game-b")
+	s.AddPending("game-c")
+	ids := s.ListPending()
+	if len(ids) != 3 {
+		t.Errorf("expected 3 pending games, got %d: %v", len(ids), ids)
+	}
+}

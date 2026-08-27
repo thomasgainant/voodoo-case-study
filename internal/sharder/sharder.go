@@ -19,8 +19,9 @@ import (
 type Sharder struct {
 	workers []*worker.Worker
 	// index is the hash index: gameId → *Worker (direct in-memory pointer).
-	index map[string]*worker.Worker
-	mu    sync.RWMutex
+	index   map[string]*worker.Worker
+	pending map[string]struct{} // set of game IDs waiting for a second player
+	mu      sync.RWMutex
 }
 
 func New(numWorkers int) *Sharder {
@@ -31,6 +32,7 @@ func New(numWorkers int) *Sharder {
 	return &Sharder{
 		workers: workers,
 		index:   make(map[string]*worker.Worker),
+		pending: make(map[string]struct{}),
 	}
 }
 
@@ -78,6 +80,31 @@ func (s *Sharder) PickLeastLoaded() *worker.Worker {
 		}
 	}
 	return best
+}
+
+// AddPending marks gameID as waiting for a second player.
+func (s *Sharder) AddPending(gameID string) {
+	s.mu.Lock()
+	s.pending[gameID] = struct{}{}
+	s.mu.Unlock()
+}
+
+// RemovePending removes gameID from the pending set when it is no longer waiting.
+func (s *Sharder) RemovePending(gameID string) {
+	s.mu.Lock()
+	delete(s.pending, gameID)
+	s.mu.Unlock()
+}
+
+// ListPending returns the IDs of all games currently waiting for a second player.
+func (s *Sharder) ListPending() []string {
+	s.mu.RLock()
+	ids := make([]string, 0, len(s.pending))
+	for id := range s.pending {
+		ids = append(ids, id)
+	}
+	s.mu.RUnlock()
+	return ids
 }
 
 func fnvHash(s string) uint32 {

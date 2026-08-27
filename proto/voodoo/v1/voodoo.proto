@@ -11,6 +11,7 @@ service VoodooService {
   rpc CreateGame(CreateGameRequest) returns (CreateGameResponse);
   rpc JoinGame(JoinGameRequest) returns (JoinGameResponse);
   rpc UpdateGame(UpdateGameRequest) returns (UpdateGameResponse);
+  rpc ListPendingGames(ListPendingGamesRequest) returns (ListPendingGamesResponse);
 }
 
 message HealthRequest {}
@@ -27,3 +28,6 @@ message JoinGameResponse { string game_id = 1; }
 
 message UpdateGameRequest { string game_id = 1; }
 message UpdateGameResponse { string game_id = 1; }
+
+message ListPendingGamesRequest {}
+message ListPendingGamesResponse { repeated string game_ids = 1; }

@@ -87,3 +87,39 @@ func TestUpdateGameFailsForUnknownGame(t *testing.T) {
 		t.Fatal("expected error for unknown game")
 	}
 }
+
+func TestListPendingGamesShowsNewGame(t *testing.T) {
+	r := router.New()
+	ctx := context.Background()
+
+	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+
+	resp, err := r.ListPendingGames(ctx, &pb.ListPendingGamesRequest{})
+	if err != nil {
+		t.Fatalf("ListPendingGames failed: %v", err)
+	}
+	for _, id := range resp.GameIds {
+		if id == created.GameId {
+			return
+		}
+	}
+	t.Errorf("expected game %q in pending list, got %v", created.GameId, resp.GameIds)
+}
+
+func TestListPendingGamesRemovesGameAfterJoin(t *testing.T) {
+	r := router.New()
+	ctx := context.Background()
+
+	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	resp, err := r.ListPendingGames(ctx, &pb.ListPendingGamesRequest{})
+	if err != nil {
+		t.Fatalf("ListPendingGames failed: %v", err)
+	}
+	for _, id := range resp.GameIds {
+		if id == created.GameId {
+			t.Errorf("game %q should not be in pending list after join", created.GameId)
+		}
+	}
+}

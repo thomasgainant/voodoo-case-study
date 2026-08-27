@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	VoodooService_Health_FullMethodName     = "/voodoo.v1.VoodooService/Health"
-	VoodooService_CreateGame_FullMethodName = "/voodoo.v1.VoodooService/CreateGame"
-	VoodooService_JoinGame_FullMethodName   = "/voodoo.v1.VoodooService/JoinGame"
-	VoodooService_UpdateGame_FullMethodName = "/voodoo.v1.VoodooService/UpdateGame"
+	VoodooService_Health_FullMethodName           = "/voodoo.v1.VoodooService/Health"
+	VoodooService_CreateGame_FullMethodName       = "/voodoo.v1.VoodooService/CreateGame"
+	VoodooService_JoinGame_FullMethodName         = "/voodoo.v1.VoodooService/JoinGame"
+	VoodooService_UpdateGame_FullMethodName       = "/voodoo.v1.VoodooService/UpdateGame"
+	VoodooService_ListPendingGames_FullMethodName = "/voodoo.v1.VoodooService/ListPendingGames"
 )
 
 // VoodooServiceClient is the client API for VoodooService service.
@@ -36,6 +37,7 @@ type VoodooServiceClient interface {
 	CreateGame(ctx context.Context, in *CreateGameRequest, opts ...grpc.CallOption) (*CreateGameResponse, error)
 	JoinGame(ctx context.Context, in *JoinGameRequest, opts ...grpc.CallOption) (*JoinGameResponse, error)
 	UpdateGame(ctx context.Context, in *UpdateGameRequest, opts ...grpc.CallOption) (*UpdateGameResponse, error)
+	ListPendingGames(ctx context.Context, in *ListPendingGamesRequest, opts ...grpc.CallOption) (*ListPendingGamesResponse, error)
 }
 
 type voodooServiceClient struct {
@@ -86,6 +88,16 @@ func (c *voodooServiceClient) UpdateGame(ctx context.Context, in *UpdateGameRequ
 	return out, nil
 }
 
+func (c *voodooServiceClient) ListPendingGames(ctx context.Context, in *ListPendingGamesRequest, opts ...grpc.CallOption) (*ListPendingGamesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPendingGamesResponse)
+	err := c.cc.Invoke(ctx, VoodooService_ListPendingGames_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VoodooServiceServer is the server API for VoodooService service.
 // All implementations must embed UnimplementedVoodooServiceServer
 // for forward compatibility.
@@ -97,6 +109,7 @@ type VoodooServiceServer interface {
 	CreateGame(context.Context, *CreateGameRequest) (*CreateGameResponse, error)
 	JoinGame(context.Context, *JoinGameRequest) (*JoinGameResponse, error)
 	UpdateGame(context.Context, *UpdateGameRequest) (*UpdateGameResponse, error)
+	ListPendingGames(context.Context, *ListPendingGamesRequest) (*ListPendingGamesResponse, error)
 	mustEmbedUnimplementedVoodooServiceServer()
 }
 
@@ -118,6 +131,9 @@ func (UnimplementedVoodooServiceServer) JoinGame(context.Context, *JoinGameReque
 }
 func (UnimplementedVoodooServiceServer) UpdateGame(context.Context, *UpdateGameRequest) (*UpdateGameResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateGame not implemented")
+}
+func (UnimplementedVoodooServiceServer) ListPendingGames(context.Context, *ListPendingGamesRequest) (*ListPendingGamesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPendingGames not implemented")
 }
 func (UnimplementedVoodooServiceServer) mustEmbedUnimplementedVoodooServiceServer() {}
 func (UnimplementedVoodooServiceServer) testEmbeddedByValue()                       {}
@@ -212,6 +228,24 @@ func _VoodooService_UpdateGame_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VoodooService_ListPendingGames_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPendingGamesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VoodooServiceServer).ListPendingGames(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VoodooService_ListPendingGames_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VoodooServiceServer).ListPendingGames(ctx, req.(*ListPendingGamesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VoodooService_ServiceDesc is the grpc.ServiceDesc for VoodooService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -234,6 +268,10 @@ var VoodooService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateGame",
 			Handler:    _VoodooService_UpdateGame_Handler,
+		},
+		{
+			MethodName: "ListPendingGames",
+			Handler:    _VoodooService_ListPendingGames_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

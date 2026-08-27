@@ -90,3 +90,44 @@ func TestJoinFullGameReturnsError(t *testing.T) {
 		t.Fatal("expected error when joining a full game")
 	}
 }
+
+func TestListPendingGamesEndpoint(t *testing.T) {
+	client, teardown := newTestServer(t)
+	defer teardown()
+	ctx := context.Background()
+
+	created, err := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	if err != nil {
+		t.Fatalf("CreateGame failed: %v", err)
+	}
+
+	resp, err := client.ListPendingGames(ctx, &pb.ListPendingGamesRequest{})
+	if err != nil {
+		t.Fatalf("ListPendingGames failed: %v", err)
+	}
+	for _, id := range resp.GameIds {
+		if id == created.GameId {
+			return
+		}
+	}
+	t.Errorf("expected game %q in pending list, got %v", created.GameId, resp.GameIds)
+}
+
+func TestListPendingGamesRemovedAfterJoin(t *testing.T) {
+	client, teardown := newTestServer(t)
+	defer teardown()
+	ctx := context.Background()
+
+	created, _ := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	client.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	resp, err := client.ListPendingGames(ctx, &pb.ListPendingGamesRequest{})
+	if err != nil {
+		t.Fatalf("ListPendingGames failed: %v", err)
+	}
+	for _, id := range resp.GameIds {
+		if id == created.GameId {
+			t.Errorf("game %q should be removed from pending list after join", created.GameId)
+		}
+	}
+}

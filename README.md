@@ -72,3 +72,10 @@ Once a game has two playerIds in its game state, it is impossible to join it. Th
 
 This also means that the CreateGame endpoint implies a waiting time for the player who created the game in which he will wait until someone joins his game through the JoinGame endpoint.``
 
+### Pending games list
+
+``I need now to update the endpoints of the application so a client can search for all pending games. Then the client will be able to join a pending game.
+
+I want the list of pending games to be a list within the Sharder so we can have a O(1) access to the pending games. This list has to be updated once two players have joined a game and that game is no longer pending.
+
+This needs to be tested, in the test environments. but also using cmd\client\main.go``

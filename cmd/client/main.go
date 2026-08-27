@@ -36,6 +36,13 @@ func main() {
 	}
 	log.Printf("[player-1] Created game %q — waiting for a second player...", created.GameId)
 
+	// Show that the new game appears in the pending list.
+	pending, err := client.ListPendingGames(ctx, &pb.ListPendingGamesRequest{})
+	if err != nil {
+		log.Fatalf("ListPendingGames RPC failed: %v", err)
+	}
+	log.Printf("Pending games (%d): %v", len(pending.GameIds), pending.GameIds)
+
 	// playerJoined carries the game_id once the second player has joined.
 	playerJoined := make(chan string, 1)
 
@@ -56,6 +63,13 @@ func main() {
 	// Player 1 blocks here until the join is confirmed.
 	gameID := <-playerJoined
 	log.Printf("[player-1] Player 2 joined! Game %q is ready.", gameID)
+
+	// Show that the game is no longer in the pending list.
+	pending, err = client.ListPendingGames(ctx, &pb.ListPendingGamesRequest{})
+	if err != nil {
+		log.Fatalf("ListPendingGames RPC failed: %v", err)
+	}
+	log.Printf("Pending games after join (%d): %v", len(pending.GameIds), pending.GameIds)
 
 	updated, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: gameID})
 	if err != nil {

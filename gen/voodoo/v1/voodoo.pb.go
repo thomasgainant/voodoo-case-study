@@ -373,6 +373,86 @@ func (x *UpdateGameResponse) GetGameId() string {
 	return ""
 }
 
+type ListPendingGamesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPendingGamesRequest) Reset() {
+	*x = ListPendingGamesRequest{}
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPendingGamesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPendingGamesRequest) ProtoMessage() {}
+
+func (x *ListPendingGamesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPendingGamesRequest.ProtoReflect.Descriptor instead.
+func (*ListPendingGamesRequest) Descriptor() ([]byte, []int) {
+	return file_voodoo_v1_voodoo_proto_rawDescGZIP(), []int{8}
+}
+
+type ListPendingGamesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameIds       []string               `protobuf:"bytes,1,rep,name=game_ids,json=gameIds,proto3" json:"game_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPendingGamesResponse) Reset() {
+	*x = ListPendingGamesResponse{}
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPendingGamesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPendingGamesResponse) ProtoMessage() {}
+
+func (x *ListPendingGamesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPendingGamesResponse.ProtoReflect.Descriptor instead.
+func (*ListPendingGamesResponse) Descriptor() ([]byte, []int) {
+	return file_voodoo_v1_voodoo_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ListPendingGamesResponse) GetGameIds() []string {
+	if x != nil {
+		return x.GameIds
+	}
+	return nil
+}
+
 var File_voodoo_v1_voodoo_proto protoreflect.FileDescriptor
 
 const file_voodoo_v1_voodoo_proto_rawDesc = "" +
@@ -393,14 +473,18 @@ const file_voodoo_v1_voodoo_proto_rawDesc = "" +
 	"\x11UpdateGameRequest\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\"-\n" +
 	"\x12UpdateGameResponse\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId2\xa9\x02\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\"\x19\n" +
+	"\x17ListPendingGamesRequest\"5\n" +
+	"\x18ListPendingGamesResponse\x12\x19\n" +
+	"\bgame_ids\x18\x01 \x03(\tR\agameIds2\x86\x03\n" +
 	"\rVoodooService\x12=\n" +
 	"\x06Health\x12\x18.voodoo.v1.HealthRequest\x1a\x19.voodoo.v1.HealthResponse\x12I\n" +
 	"\n" +
 	"CreateGame\x12\x1c.voodoo.v1.CreateGameRequest\x1a\x1d.voodoo.v1.CreateGameResponse\x12C\n" +
 	"\bJoinGame\x12\x1a.voodoo.v1.JoinGameRequest\x1a\x1b.voodoo.v1.JoinGameResponse\x12I\n" +
 	"\n" +
-	"UpdateGame\x12\x1c.voodoo.v1.UpdateGameRequest\x1a\x1d.voodoo.v1.UpdateGameResponseB!Z\x1fvoodoo-case-study/gen/voodoo/v1b\x06proto3"
+	"UpdateGame\x12\x1c.voodoo.v1.UpdateGameRequest\x1a\x1d.voodoo.v1.UpdateGameResponse\x12[\n" +
+	"\x10ListPendingGames\x12\".voodoo.v1.ListPendingGamesRequest\x1a#.voodoo.v1.ListPendingGamesResponseB!Z\x1fvoodoo-case-study/gen/voodoo/v1b\x06proto3"
 
 var (
 	file_voodoo_v1_voodoo_proto_rawDescOnce sync.Once
@@ -414,28 +498,32 @@ func file_voodoo_v1_voodoo_proto_rawDescGZIP() []byte {
 	return file_voodoo_v1_voodoo_proto_rawDescData
 }
 
-var file_voodoo_v1_voodoo_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_voodoo_v1_voodoo_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_voodoo_v1_voodoo_proto_goTypes = []any{
-	(*HealthRequest)(nil),      // 0: voodoo.v1.HealthRequest
-	(*HealthResponse)(nil),     // 1: voodoo.v1.HealthResponse
-	(*CreateGameRequest)(nil),  // 2: voodoo.v1.CreateGameRequest
-	(*CreateGameResponse)(nil), // 3: voodoo.v1.CreateGameResponse
-	(*JoinGameRequest)(nil),    // 4: voodoo.v1.JoinGameRequest
-	(*JoinGameResponse)(nil),   // 5: voodoo.v1.JoinGameResponse
-	(*UpdateGameRequest)(nil),  // 6: voodoo.v1.UpdateGameRequest
-	(*UpdateGameResponse)(nil), // 7: voodoo.v1.UpdateGameResponse
+	(*HealthRequest)(nil),            // 0: voodoo.v1.HealthRequest
+	(*HealthResponse)(nil),           // 1: voodoo.v1.HealthResponse
+	(*CreateGameRequest)(nil),        // 2: voodoo.v1.CreateGameRequest
+	(*CreateGameResponse)(nil),       // 3: voodoo.v1.CreateGameResponse
+	(*JoinGameRequest)(nil),          // 4: voodoo.v1.JoinGameRequest
+	(*JoinGameResponse)(nil),         // 5: voodoo.v1.JoinGameResponse
+	(*UpdateGameRequest)(nil),        // 6: voodoo.v1.UpdateGameRequest
+	(*UpdateGameResponse)(nil),       // 7: voodoo.v1.UpdateGameResponse
+	(*ListPendingGamesRequest)(nil),  // 8: voodoo.v1.ListPendingGamesRequest
+	(*ListPendingGamesResponse)(nil), // 9: voodoo.v1.ListPendingGamesResponse
 }
 var file_voodoo_v1_voodoo_proto_depIdxs = []int32{
 	0, // 0: voodoo.v1.VoodooService.Health:input_type -> voodoo.v1.HealthRequest
 	2, // 1: voodoo.v1.VoodooService.CreateGame:input_type -> voodoo.v1.CreateGameRequest
 	4, // 2: voodoo.v1.VoodooService.JoinGame:input_type -> voodoo.v1.JoinGameRequest
 	6, // 3: voodoo.v1.VoodooService.UpdateGame:input_type -> voodoo.v1.UpdateGameRequest
-	1, // 4: voodoo.v1.VoodooService.Health:output_type -> voodoo.v1.HealthResponse
-	3, // 5: voodoo.v1.VoodooService.CreateGame:output_type -> voodoo.v1.CreateGameResponse
-	5, // 6: voodoo.v1.VoodooService.JoinGame:output_type -> voodoo.v1.JoinGameResponse
-	7, // 7: voodoo.v1.VoodooService.UpdateGame:output_type -> voodoo.v1.UpdateGameResponse
-	4, // [4:8] is the sub-list for method output_type
-	0, // [0:4] is the sub-list for method input_type
+	8, // 4: voodoo.v1.VoodooService.ListPendingGames:input_type -> voodoo.v1.ListPendingGamesRequest
+	1, // 5: voodoo.v1.VoodooService.Health:output_type -> voodoo.v1.HealthResponse
+	3, // 6: voodoo.v1.VoodooService.CreateGame:output_type -> voodoo.v1.CreateGameResponse
+	5, // 7: voodoo.v1.VoodooService.JoinGame:output_type -> voodoo.v1.JoinGameResponse
+	7, // 8: voodoo.v1.VoodooService.UpdateGame:output_type -> voodoo.v1.UpdateGameResponse
+	9, // 9: voodoo.v1.VoodooService.ListPendingGames:output_type -> voodoo.v1.ListPendingGamesResponse
+	5, // [5:10] is the sub-list for method output_type
+	0, // [0:5] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -452,7 +540,7 @@ func file_voodoo_v1_voodoo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_voodoo_v1_voodoo_proto_rawDesc), len(file_voodoo_v1_voodoo_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -75,7 +75,7 @@ A game that has one player is in a **waiting** state. A game with two players is
 
 ## Game endpoints
 
-The three game RPCs are defined in `proto/voodoo/v1/voodoo.proto` and dispatched by the Router.
+The four game RPCs are defined in `proto/voodoo/v1/voodoo.proto` and dispatched by the Router.
 
 ### CreateGame
 
@@ -109,3 +109,13 @@ rpc UpdateGame(UpdateGameRequest) returns (UpdateGameResponse)
 ```
 
 The Router resolves the Worker and verifies the game exists via `worker.Get`. Returns `NotFound` if the game ID is unknown. The actual game-rule logic is not yet implemented.
+
+### ListPendingGames
+
+```
+rpc ListPendingGames(ListPendingGamesRequest) returns (ListPendingGamesResponse)
+  ListPendingGamesRequest  {}
+  ListPendingGamesResponse { repeated string game_ids }
+```
+
+Returns the IDs of all games currently in the **waiting** state (one player, no second player yet). The Sharder maintains a `pending` set — a `map[string]struct{}` updated on every `CreateGame` and `JoinGame` — so this call is O(1) for membership and O(n) in the number of pending games for the list itself. `CreateGame` calls `sharder.AddPending`; a successful `JoinGame` calls `sharder.RemovePending`.

@@ -33,6 +33,7 @@ func (r *Router) CreateGame(_ context.Context, req *pb.CreateGameRequest) (*pb.C
 	w := r.sharder.PickLeastLoaded()
 	state := w.CreateGame(req.PlayerId)
 	r.sharder.Register(state.ID, w)
+	r.sharder.AddPending(state.ID)
 	return &pb.CreateGameResponse{GameId: state.ID}, nil
 }
 
@@ -41,6 +42,7 @@ func (r *Router) JoinGame(_ context.Context, req *pb.JoinGameRequest) (*pb.JoinG
 	if _, err := w.JoinGame(req.GameId, req.PlayerId); err != nil {
 		return nil, status.Errorf(codes.FailedPrecondition, "%v", err)
 	}
+	r.sharder.RemovePending(req.GameId)
 	return &pb.JoinGameResponse{GameId: req.GameId}, nil
 }
 
@@ -50,4 +52,8 @@ func (r *Router) UpdateGame(_ context.Context, req *pb.UpdateGameRequest) (*pb.U
 		return nil, status.Errorf(codes.NotFound, "game %q not found", req.GameId)
 	}
 	return &pb.UpdateGameResponse{GameId: req.GameId}, nil
+}
+
+func (r *Router) ListPendingGames(_ context.Context, _ *pb.ListPendingGamesRequest) (*pb.ListPendingGamesResponse, error) {
+	return &pb.ListPendingGamesResponse{GameIds: r.sharder.ListPending()}, nil
 }
