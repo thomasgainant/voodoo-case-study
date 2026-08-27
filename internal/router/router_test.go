@@ -70,8 +70,9 @@ func TestUpdateGameReturnsGameID(t *testing.T) {
 	r := router.New()
 	ctx := context.Background()
 	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
 
-	updated, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId})
+	updated, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1"})
 	if err != nil {
 		t.Fatalf("UpdateGame failed: %v", err)
 	}
@@ -82,9 +83,46 @@ func TestUpdateGameReturnsGameID(t *testing.T) {
 
 func TestUpdateGameFailsForUnknownGame(t *testing.T) {
 	r := router.New()
-	_, err := r.UpdateGame(context.Background(), &pb.UpdateGameRequest{GameId: "unknown"})
+	_, err := r.UpdateGame(context.Background(), &pb.UpdateGameRequest{GameId: "unknown", PlayerId: "p1"})
 	if err == nil {
 		t.Fatal("expected error for unknown game")
+	}
+}
+
+func TestUpdateGameFailsWhenGameNotReady(t *testing.T) {
+	r := router.New()
+	ctx := context.Background()
+	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+
+	_, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1"})
+	if err == nil {
+		t.Fatal("expected error when game has only one player")
+	}
+}
+
+func TestUpdateGameFailsWhenNotPlayersTurn(t *testing.T) {
+	r := router.New()
+	ctx := context.Background()
+	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	_, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2"})
+	if err == nil {
+		t.Fatal("expected error when p2 plays out of turn")
+	}
+}
+
+func TestUpdateGameAlternatesTurns(t *testing.T) {
+	r := router.New()
+	ctx := context.Background()
+	created, _ := r.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	r.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	moves := []string{"p1", "p2", "p1", "p2"}
+	for i, player := range moves {
+		if _, err := r.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: player}); err != nil {
+			t.Fatalf("move %d by %q failed: %v", i+1, player, err)
+		}
 	}
 }
 

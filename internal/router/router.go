@@ -2,12 +2,14 @@ package router
 
 import (
 	"context"
+	"errors"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	pb "voodoo-case-study/gen/voodoo/v1"
 	"voodoo-case-study/internal/sharder"
+	"voodoo-case-study/internal/worker"
 )
 
 // Router dispatches incoming gRPC requests to the appropriate worker.
@@ -48,8 +50,11 @@ func (r *Router) JoinGame(_ context.Context, req *pb.JoinGameRequest) (*pb.JoinG
 
 func (r *Router) UpdateGame(_ context.Context, req *pb.UpdateGameRequest) (*pb.UpdateGameResponse, error) {
 	w := r.sharder.Resolve(req.GameId)
-	if w.Get(req.GameId) == nil {
-		return nil, status.Errorf(codes.NotFound, "game %q not found", req.GameId)
+	if err := w.UpdateGame(req.GameId, req.PlayerId); err != nil {
+		if errors.Is(err, worker.ErrNotYourTurn) || errors.Is(err, worker.ErrGameNotReady) {
+			return nil, status.Errorf(codes.FailedPrecondition, "%v", err)
+		}
+		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
 	return &pb.UpdateGameResponse{GameId: req.GameId}, nil
 }

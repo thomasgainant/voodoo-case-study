@@ -8,8 +8,9 @@ import (
 	"sync/atomic"
 )
 
-// ErrGameFull is returned when a player attempts to join an already full game.
 var ErrGameFull = errors.New("game is full")
+var ErrGameNotReady = errors.New("game is not ready")
+var ErrNotYourTurn = errors.New("not your turn")
 
 // GameState holds the in-memory state for a single game.
 type GameState struct {
@@ -17,6 +18,7 @@ type GameState struct {
 	mu          sync.Mutex
 	players     [2]string
 	playerCount int
+	currentTurn int          // index (0 or 1) of the player whose turn it is
 	ready       chan struct{} // closed when both player slots are filled
 }
 
@@ -40,6 +42,20 @@ func (g *GameState) AddPlayer(playerID string) error {
 	g.players[1] = playerID
 	g.playerCount++
 	close(g.ready)
+	return nil
+}
+
+// TakeTurn validates that playerID holds the current turn and advances it.
+func (g *GameState) TakeTurn(playerID string) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.playerCount < 2 {
+		return ErrGameNotReady
+	}
+	if g.players[g.currentTurn] != playerID {
+		return ErrNotYourTurn
+	}
+	g.currentTurn = 1 - g.currentTurn
 	return nil
 }
 
@@ -93,6 +109,17 @@ func (w *Worker) JoinGame(gameID, playerID string) (*GameState, error) {
 		return nil, err
 	}
 	return state, nil
+}
+
+// UpdateGame applies a move for playerID, enforcing turn order.
+func (w *Worker) UpdateGame(gameID, playerID string) error {
+	w.mu.RLock()
+	state, ok := w.states[gameID]
+	w.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("game %q not found", gameID)
+	}
+	return state.TakeTurn(playerID)
 }
 
 // Get returns the GameState for the given gameID, or nil if not found.

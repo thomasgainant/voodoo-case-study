@@ -71,9 +71,14 @@ func main() {
 	}
 	log.Printf("Pending games after join (%d): %v", len(pending.GameIds), pending.GameIds)
 
-	updated, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: gameID})
-	if err != nil {
-		log.Fatalf("UpdateGame RPC failed: %v", err)
+	// Simulate two turns: player-1 moves, then player-2 moves.
+	if _, err = client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: gameID, PlayerId: "player-1"}); err != nil {
+		log.Fatalf("UpdateGame (player-1 turn) failed: %v", err)
 	}
-	log.Printf("UpdateGame: game_id=%q", updated.GameId)
+	log.Printf("[player-1] Made a move in game %q", gameID)
+
+	if _, err = client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: gameID, PlayerId: "player-2"}); err != nil {
+		log.Fatalf("UpdateGame (player-2 turn) failed: %v", err)
+	}
+	log.Printf("[player-2] Made a move in game %q", gameID)
 }

@@ -26,7 +26,10 @@ message JoinGameRequest {
 }
 message JoinGameResponse { string game_id = 1; }
 
-message UpdateGameRequest { string game_id = 1; }
+message UpdateGameRequest {
+  string game_id = 1;
+  string player_id = 2;
+}
 message UpdateGameResponse { string game_id = 1; }
 
 message ListPendingGamesRequest {}

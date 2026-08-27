@@ -91,6 +91,50 @@ func TestJoinFullGameReturnsError(t *testing.T) {
 	}
 }
 
+func TestUpdateGameEndpoint(t *testing.T) {
+	client, teardown := newTestServer(t)
+	defer teardown()
+	ctx := context.Background()
+
+	created, _ := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	client.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	updated, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1"})
+	if err != nil {
+		t.Fatalf("UpdateGame failed: %v", err)
+	}
+	if updated.GameId != created.GameId {
+		t.Errorf("expected game_id=%q, got %q", created.GameId, updated.GameId)
+	}
+}
+
+func TestUpdateGameRejectsWrongTurn(t *testing.T) {
+	client, teardown := newTestServer(t)
+	defer teardown()
+	ctx := context.Background()
+
+	created, _ := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+	client.JoinGame(ctx, &pb.JoinGameRequest{GameId: created.GameId, PlayerId: "p2"}) //nolint:errcheck
+
+	_, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p2"})
+	if err == nil {
+		t.Fatal("expected error when p2 plays out of turn")
+	}
+}
+
+func TestUpdateGameRejectsUnreadyGame(t *testing.T) {
+	client, teardown := newTestServer(t)
+	defer teardown()
+	ctx := context.Background()
+
+	created, _ := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "p1"})
+
+	_, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: created.GameId, PlayerId: "p1"})
+	if err == nil {
+		t.Fatal("expected error when game has only one player")
+	}
+}
+
 func TestListPendingGamesEndpoint(t *testing.T) {
 	client, teardown := newTestServer(t)
 	defer teardown()

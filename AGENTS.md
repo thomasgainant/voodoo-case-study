@@ -60,6 +60,7 @@ Each Worker owns a `map[string]*GameState` protected by a `sync.RWMutex`. A `Gam
 - `ID` — the game identifier, generated as `"game-{workerID}-{seq}"` where `seq` is a per-worker atomic counter.
 - `players [2]string` — the two player IDs. `players[0]` is set at creation; `players[1]` is filled when the second player joins.
 - `playerCount int` — current number of players (0–2), guarded by a per-state `sync.Mutex`.
+- `currentTurn int` — index (0 or 1) of the player whose turn it is. Starts at 0 (`players[0]`) and flips on every successful `TakeTurn` call.
 - `ready chan struct{}` — closed when both slots are filled, allowing any goroutine to block on `GameState.WaitReady(ctx)` until the game becomes full.
 
 A game that has one player is in a **waiting** state. A game with two players is **ready**. The maximum capacity is fixed at two; any further join attempt returns `ErrGameFull`.
@@ -70,6 +71,7 @@ A game that has one player is in a **waiting** state. A game with two players is
 |---|---|
 | `CreateGame(playerID)` | Allocates a new `GameState` with `playerID` as the first player, stores it in the map, and returns it. |
 | `JoinGame(gameID, playerID)` | Looks up an existing state and calls `AddPlayer`. Returns `ErrGameFull` if the game already has two players, or an error if the game is not found. |
+| `UpdateGame(gameID, playerID)` | Calls `GameState.TakeTurn`. Returns `ErrGameNotReady` if only one player has joined, `ErrNotYourTurn` if it is not `playerID`'s turn, or an error if the game is not found. |
 | `Get(gameID)` | Returns the `*GameState` for a given ID, or `nil`. |
 | `StateCount()` | Returns the number of game states held by this worker. Used by the Sharder for load balancing. |
 
@@ -104,11 +106,11 @@ The Router resolves the Worker via `sharder.Resolve(game_id)` (O(1) index lookup
 
 ```
 rpc UpdateGame(UpdateGameRequest) returns (UpdateGameResponse)
-  UpdateGameRequest  { string game_id }
+  UpdateGameRequest  { string game_id, string player_id }
   UpdateGameResponse { string game_id }
 ```
 
-The Router resolves the Worker and verifies the game exists via `worker.Get`. Returns `NotFound` if the game ID is unknown. The actual game-rule logic is not yet implemented.
+The Router resolves the Worker and calls `worker.UpdateGame(game_id, player_id)`, which enforces turn order via `GameState.TakeTurn`. Returns `NotFound` if the game ID is unknown. Returns `FailedPrecondition` if the game has only one player (`ErrGameNotReady`) or if `player_id` does not hold the current turn (`ErrNotYourTurn`). On success the turn advances to the other player.
 
 ### ListPendingGames
 

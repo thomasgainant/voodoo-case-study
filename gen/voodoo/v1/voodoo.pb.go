@@ -288,6 +288,7 @@ func (x *JoinGameResponse) GetGameId() string {
 type UpdateGameRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	PlayerId      string                 `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -325,6 +326,13 @@ func (*UpdateGameRequest) Descriptor() ([]byte, []int) {
 func (x *UpdateGameRequest) GetGameId() string {
 	if x != nil {
 		return x.GameId
+	}
+	return ""
+}
+
+func (x *UpdateGameRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
 	}
 	return ""
 }
@@ -469,9 +477,10 @@ const file_voodoo_v1_voodoo_proto_rawDesc = "" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x1b\n" +
 	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\"+\n" +
 	"\x10JoinGameResponse\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId\",\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\"I\n" +
 	"\x11UpdateGameRequest\x12\x17\n" +
-	"\agame_id\x18\x01 \x01(\tR\x06gameId\"-\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\"-\n" +
 	"\x12UpdateGameResponse\x12\x17\n" +
 	"\agame_id\x18\x01 \x01(\tR\x06gameId\"\x19\n" +
 	"\x17ListPendingGamesRequest\"5\n" +

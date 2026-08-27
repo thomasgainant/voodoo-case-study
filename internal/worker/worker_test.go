@@ -121,3 +121,51 @@ func TestStateCountReflectsCreatedGames(t *testing.T) {
 		t.Errorf("expected 2 states, got %d", w.StateCount())
 	}
 }
+
+func TestUpdateGameFailsWhenGameNotReady(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	if err := w.UpdateGame(state.ID, "p1"); !errors.Is(err, worker.ErrGameNotReady) {
+		t.Errorf("expected ErrGameNotReady, got %v", err)
+	}
+}
+
+func TestUpdateGameFailsForUnknownGame(t *testing.T) {
+	w := worker.New(0)
+	if err := w.UpdateGame("no-such-game", "p1"); err == nil {
+		t.Fatal("expected error for unknown game")
+	}
+}
+
+func TestUpdateGameFailsWhenNotPlayersTurn(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	if err := w.UpdateGame(state.ID, "p2"); !errors.Is(err, worker.ErrNotYourTurn) {
+		t.Errorf("expected ErrNotYourTurn, got %v", err)
+	}
+}
+
+func TestUpdateGameSucceedsForCurrentPlayer(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	if err := w.UpdateGame(state.ID, "p1"); err != nil {
+		t.Errorf("expected p1 to succeed on first turn, got %v", err)
+	}
+}
+
+func TestUpdateGameAlternatesTurns(t *testing.T) {
+	w := worker.New(0)
+	state := w.CreateGame("p1")
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	moves := []string{"p1", "p2", "p1", "p2"}
+	for i, player := range moves {
+		if err := w.UpdateGame(state.ID, player); err != nil {
+			t.Fatalf("move %d by %q failed: %v", i+1, player, err)
+		}
+	}
+}
