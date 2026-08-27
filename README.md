@@ -71,6 +71,7 @@ The application has been built using AI (Copilot + Claude Sonnet 4.6) to speed u
 - Having every game id on the hash table also could be improved by optimising index access with SST or B-Tree. The implies sorting of the game IDs would require some extra implementation regarding the maintaining of the hash table.
 - The game logic should be seperated from the Worker structure, with its own structure. Currently, this is ugly from a gameplay development perspective.
 - The router and sharder layers could probably be merged, if we wanted a cleaner code.
+- Load testing using k6, to verify the scalability of the system and detect the bottlenecks.
 
 ## Important prompts history
 
