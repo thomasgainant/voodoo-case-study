@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"time"
 
 	pb "voodoo-case-study/gen/voodoo/v1"
 	"voodoo-case-study/testclient"
@@ -21,9 +22,44 @@ func main() {
 	}
 	defer client.Close()
 
-	resp, err := client.Health(context.Background(), &pb.HealthRequest{})
+	ctx := context.Background()
+
+	health, err := client.Health(ctx, &pb.HealthRequest{})
 	if err != nil {
 		log.Fatalf("Health RPC failed: %v", err)
 	}
-	log.Printf("Health: status=%q", resp.Status)
+	log.Printf("Health: status=%q", health.Status)
+
+	created, err := client.CreateGame(ctx, &pb.CreateGameRequest{PlayerId: "player-1"})
+	if err != nil {
+		log.Fatalf("CreateGame RPC failed: %v", err)
+	}
+	log.Printf("[player-1] Created game %q — waiting for a second player...", created.GameId)
+
+	// playerJoined carries the game_id once the second player has joined.
+	playerJoined := make(chan string, 1)
+
+	// Simulate player 2 joining from a separate goroutine.
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		joined, err := client.JoinGame(ctx, &pb.JoinGameRequest{
+			GameId:   created.GameId,
+			PlayerId: "player-2",
+		})
+		if err != nil {
+			log.Fatalf("[player-2] JoinGame RPC failed: %v", err)
+		}
+		log.Printf("[player-2] Joined game %q", joined.GameId)
+		playerJoined <- joined.GameId
+	}()
+
+	// Player 1 blocks here until the join is confirmed.
+	gameID := <-playerJoined
+	log.Printf("[player-1] Player 2 joined! Game %q is ready.", gameID)
+
+	updated, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{GameId: gameID})
+	if err != nil {
+		log.Fatalf("UpdateGame RPC failed: %v", err)
+	}
+	log.Printf("UpdateGame: game_id=%q", updated.GameId)
 }

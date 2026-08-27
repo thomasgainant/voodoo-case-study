@@ -60,6 +60,42 @@ func TestResolveIsThreadSafe(t *testing.T) {
 	wg.Wait()
 }
 
+func TestPickLeastLoadedReturnsWorkerWithFewestStates(t *testing.T) {
+	s := sharder.New(3)
+	workers := s.Workers()
+
+	workers[0].CreateGame("p")
+	workers[0].CreateGame("p") // 2 states
+	workers[1].CreateGame("p") // 1 state
+	// workers[2] has 0 states — must be picked
+
+	got := s.PickLeastLoaded()
+	if got != workers[2] {
+		t.Errorf("expected workers[2] (0 states), got worker id=%d", got.ID())
+	}
+}
+
+func TestPickLeastLoadedTieBreaksToFirstWorker(t *testing.T) {
+	s := sharder.New(3)
+	// All workers start empty — first one should be returned.
+	got := s.PickLeastLoaded()
+	if got != s.Workers()[0] {
+		t.Errorf("expected workers[0] on empty tie, got worker id=%d", got.ID())
+	}
+}
+
+func TestRegisterOverridesHashBasedRouting(t *testing.T) {
+	s := sharder.New(4)
+	w := s.PickLeastLoaded()
+	state := w.CreateGame("p1")
+	s.Register(state.ID, w)
+
+	resolved := s.Resolve(state.ID)
+	if resolved != w {
+		t.Errorf("expected registered worker (id=%d), got worker id=%d", w.ID(), resolved.ID())
+	}
+}
+
 func TestSharderWorkersReturnsCorrectCount(t *testing.T) {
 	const n = 8
 	s := sharder.New(n)

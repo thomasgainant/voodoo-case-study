@@ -8,10 +8,22 @@ option go_package = "voodoo-case-study/gen/voodoo/v1";
 // The router dispatches each RPC to its dedicated worker.
 service VoodooService {
   rpc Health(HealthRequest) returns (HealthResponse);
+  rpc CreateGame(CreateGameRequest) returns (CreateGameResponse);
+  rpc JoinGame(JoinGameRequest) returns (JoinGameResponse);
+  rpc UpdateGame(UpdateGameRequest) returns (UpdateGameResponse);
 }
 
 message HealthRequest {}
+message HealthResponse { string status = 1; }
 
-message HealthResponse {
-  string status = 1;
+message CreateGameRequest { string player_id = 1; }
+message CreateGameResponse { string game_id = 1; }
+
+message JoinGameRequest {
+  string game_id = 1;
+  string player_id = 2;
 }
+message JoinGameResponse { string game_id = 1; }
+
+message UpdateGameRequest { string game_id = 1; }
+message UpdateGameResponse { string game_id = 1; }

@@ -1,6 +1,8 @@
 ## Base application
 
-We are working on a Go server application.
+We are working on a Go game server application.
+
+This application is aimed to manage millions of players playing Tic-Tac-Toe.
 
 This application has to stay basic and is meant to be a demonstration. That means it is important to have a way to run the app and run the tests for it very fast. We want two layers of tests: unit and acceptance tests. They need to be updated every time a featured is added or modified.
 
@@ -34,3 +36,76 @@ make run
 # Use the client script in cmd\client\main.go
 make client
 ```
+
+## Workload division layer
+
+High-volume requests are distributed across Workers by a `Sharder` (`internal/sharder`). Each incoming request carries a `gameId`; the Sharder maps it to a specific Worker and keeps that mapping stable for the lifetime of the process.
+
+### Sharder (`internal/sharder`)
+
+The Sharder holds a fixed pool of Workers and a hash index — a `map[string]*Worker` that stores each seen `gameId` as a direct pointer to its assigned Worker in memory, mirroring the hash index pattern from database systems.
+
+On first resolution, `gameId` is hashed with FNV-1a and mapped to a Worker via `hash % numWorkers`. The result is cached in the index so all subsequent calls for the same `gameId` are a single O(1) map lookup under a shared read lock. The pool size is fixed at construction; resizing would require rehashing the entire index.
+
+The Router (`internal/router`) owns a `*Sharder` instance (8 workers by default). When a future RPC carries a `gameId`, the router resolves the target Worker with `r.sharder.Resolve(req.GameId)`.
+
+### Worker (`internal/worker`)
+
+A Worker is the unit of processing for a subset of `gameId`s. It is identified by an integer ID. A shard is a purely abstract concept — it represents the slice of load a Worker is responsible for and has no concrete representation in code. Business logic inside Workers is not yet implemented.
+
+## Game state system
+
+Each Worker owns a `map[string]*GameState` protected by a `sync.RWMutex`. A `GameState` represents one game session and holds:
+
+- `ID` — the game identifier, generated as `"game-{workerID}-{seq}"` where `seq` is a per-worker atomic counter.
+- `players [2]string` — the two player IDs. `players[0]` is set at creation; `players[1]` is filled when the second player joins.
+- `playerCount int` — current number of players (0–2), guarded by a per-state `sync.Mutex`.
+- `ready chan struct{}` — closed when both slots are filled, allowing any goroutine to block on `GameState.WaitReady(ctx)` until the game becomes full.
+
+A game that has one player is in a **waiting** state. A game with two players is **ready**. The maximum capacity is fixed at two; any further join attempt returns `ErrGameFull`.
+
+### Worker methods
+
+| Method | Description |
+|---|---|
+| `CreateGame(playerID)` | Allocates a new `GameState` with `playerID` as the first player, stores it in the map, and returns it. |
+| `JoinGame(gameID, playerID)` | Looks up an existing state and calls `AddPlayer`. Returns `ErrGameFull` if the game already has two players, or an error if the game is not found. |
+| `Get(gameID)` | Returns the `*GameState` for a given ID, or `nil`. |
+| `StateCount()` | Returns the number of game states held by this worker. Used by the Sharder for load balancing. |
+
+## Game endpoints
+
+The three game RPCs are defined in `proto/voodoo/v1/voodoo.proto` and dispatched by the Router.
+
+### CreateGame
+
+```
+rpc CreateGame(CreateGameRequest) returns (CreateGameResponse)
+  CreateGameRequest  { string player_id }
+  CreateGameResponse { string game_id  }
+```
+
+1. The Router calls `sharder.PickLeastLoaded()` to select the Worker with the fewest active game states.
+2. That Worker creates a new `GameState` with `player_id` as the first player and generates a unique `game_id`.
+3. The Router calls `sharder.Register(game_id, worker)` to pin this ID to the chosen Worker in the sharder's index, ensuring all future RPCs for this game route to the same Worker.
+4. `game_id` is returned immediately. The game is now in the **waiting** state.
+
+### JoinGame
+
+```
+rpc JoinGame(JoinGameRequest) returns (JoinGameResponse)
+  JoinGameRequest  { string game_id, string player_id }
+  JoinGameResponse { string game_id }
+```
+
+The Router resolves the Worker via `sharder.Resolve(game_id)` (O(1) index lookup after registration) and calls `worker.JoinGame`. Returns `FailedPrecondition` if the game is already full.
+
+### UpdateGame
+
+```
+rpc UpdateGame(UpdateGameRequest) returns (UpdateGameResponse)
+  UpdateGameRequest  { string game_id }
+  UpdateGameResponse { string game_id }
+```
+
+The Router resolves the Worker and verifies the game exists via `worker.Get`. Returns `NotFound` if the game ID is unknown. The actual game-rule logic is not yet implemented.

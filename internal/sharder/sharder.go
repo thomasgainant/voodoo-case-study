@@ -61,6 +61,25 @@ func (s *Sharder) Workers() []*worker.Worker {
 	return s.workers
 }
 
+// Register pins gameID to w in the index so that Resolve always routes to the correct worker.
+// Must be called after CreateGame to ensure JoinGame and UpdateGame reach the same worker.
+func (s *Sharder) Register(gameID string, w *worker.Worker) {
+	s.mu.Lock()
+	s.index[gameID] = w
+	s.mu.Unlock()
+}
+
+// PickLeastLoaded returns the Worker with the fewest active game states.
+func (s *Sharder) PickLeastLoaded() *worker.Worker {
+	best := s.workers[0]
+	for _, w := range s.workers[1:] {
+		if w.StateCount() < best.StateCount() {
+			best = w
+		}
+	}
+	return best
+}
+
 func fnvHash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))

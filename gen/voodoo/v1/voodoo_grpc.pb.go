@@ -19,7 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	VoodooService_Health_FullMethodName = "/voodoo.v1.VoodooService/Health"
+	VoodooService_Health_FullMethodName     = "/voodoo.v1.VoodooService/Health"
+	VoodooService_CreateGame_FullMethodName = "/voodoo.v1.VoodooService/CreateGame"
+	VoodooService_JoinGame_FullMethodName   = "/voodoo.v1.VoodooService/JoinGame"
+	VoodooService_UpdateGame_FullMethodName = "/voodoo.v1.VoodooService/UpdateGame"
 )
 
 // VoodooServiceClient is the client API for VoodooService service.
@@ -30,6 +33,9 @@ const (
 // The router dispatches each RPC to its dedicated worker.
 type VoodooServiceClient interface {
 	Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
+	CreateGame(ctx context.Context, in *CreateGameRequest, opts ...grpc.CallOption) (*CreateGameResponse, error)
+	JoinGame(ctx context.Context, in *JoinGameRequest, opts ...grpc.CallOption) (*JoinGameResponse, error)
+	UpdateGame(ctx context.Context, in *UpdateGameRequest, opts ...grpc.CallOption) (*UpdateGameResponse, error)
 }
 
 type voodooServiceClient struct {
@@ -50,6 +56,36 @@ func (c *voodooServiceClient) Health(ctx context.Context, in *HealthRequest, opt
 	return out, nil
 }
 
+func (c *voodooServiceClient) CreateGame(ctx context.Context, in *CreateGameRequest, opts ...grpc.CallOption) (*CreateGameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateGameResponse)
+	err := c.cc.Invoke(ctx, VoodooService_CreateGame_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *voodooServiceClient) JoinGame(ctx context.Context, in *JoinGameRequest, opts ...grpc.CallOption) (*JoinGameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(JoinGameResponse)
+	err := c.cc.Invoke(ctx, VoodooService_JoinGame_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *voodooServiceClient) UpdateGame(ctx context.Context, in *UpdateGameRequest, opts ...grpc.CallOption) (*UpdateGameResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateGameResponse)
+	err := c.cc.Invoke(ctx, VoodooService_UpdateGame_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VoodooServiceServer is the server API for VoodooService service.
 // All implementations must embed UnimplementedVoodooServiceServer
 // for forward compatibility.
@@ -58,6 +94,9 @@ func (c *voodooServiceClient) Health(ctx context.Context, in *HealthRequest, opt
 // The router dispatches each RPC to its dedicated worker.
 type VoodooServiceServer interface {
 	Health(context.Context, *HealthRequest) (*HealthResponse, error)
+	CreateGame(context.Context, *CreateGameRequest) (*CreateGameResponse, error)
+	JoinGame(context.Context, *JoinGameRequest) (*JoinGameResponse, error)
+	UpdateGame(context.Context, *UpdateGameRequest) (*UpdateGameResponse, error)
 	mustEmbedUnimplementedVoodooServiceServer()
 }
 
@@ -70,6 +109,15 @@ type UnimplementedVoodooServiceServer struct{}
 
 func (UnimplementedVoodooServiceServer) Health(context.Context, *HealthRequest) (*HealthResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Health not implemented")
+}
+func (UnimplementedVoodooServiceServer) CreateGame(context.Context, *CreateGameRequest) (*CreateGameResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateGame not implemented")
+}
+func (UnimplementedVoodooServiceServer) JoinGame(context.Context, *JoinGameRequest) (*JoinGameResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method JoinGame not implemented")
+}
+func (UnimplementedVoodooServiceServer) UpdateGame(context.Context, *UpdateGameRequest) (*UpdateGameResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateGame not implemented")
 }
 func (UnimplementedVoodooServiceServer) mustEmbedUnimplementedVoodooServiceServer() {}
 func (UnimplementedVoodooServiceServer) testEmbeddedByValue()                       {}
@@ -110,6 +158,60 @@ func _VoodooService_Health_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VoodooService_CreateGame_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateGameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VoodooServiceServer).CreateGame(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VoodooService_CreateGame_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VoodooServiceServer).CreateGame(ctx, req.(*CreateGameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VoodooService_JoinGame_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinGameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VoodooServiceServer).JoinGame(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VoodooService_JoinGame_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VoodooServiceServer).JoinGame(ctx, req.(*JoinGameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _VoodooService_UpdateGame_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateGameRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VoodooServiceServer).UpdateGame(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: VoodooService_UpdateGame_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VoodooServiceServer).UpdateGame(ctx, req.(*UpdateGameRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VoodooService_ServiceDesc is the grpc.ServiceDesc for VoodooService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -120,6 +222,18 @@ var VoodooService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Health",
 			Handler:    _VoodooService_Health_Handler,
+		},
+		{
+			MethodName: "CreateGame",
+			Handler:    _VoodooService_CreateGame_Handler,
+		},
+		{
+			MethodName: "JoinGame",
+			Handler:    _VoodooService_JoinGame_Handler,
+		},
+		{
+			MethodName: "UpdateGame",
+			Handler:    _VoodooService_UpdateGame_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

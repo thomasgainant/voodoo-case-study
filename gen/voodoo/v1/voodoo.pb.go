@@ -101,6 +101,278 @@ func (x *HealthResponse) GetStatus() string {
 	return ""
 }
 
+type CreateGameRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayerId      string                 `protobuf:"bytes,1,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateGameRequest) Reset() {
+	*x = CreateGameRequest{}
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateGameRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateGameRequest) ProtoMessage() {}
+
+func (x *CreateGameRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateGameRequest.ProtoReflect.Descriptor instead.
+func (*CreateGameRequest) Descriptor() ([]byte, []int) {
+	return file_voodoo_v1_voodoo_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CreateGameRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+type CreateGameResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateGameResponse) Reset() {
+	*x = CreateGameResponse{}
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateGameResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateGameResponse) ProtoMessage() {}
+
+func (x *CreateGameResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateGameResponse.ProtoReflect.Descriptor instead.
+func (*CreateGameResponse) Descriptor() ([]byte, []int) {
+	return file_voodoo_v1_voodoo_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CreateGameResponse) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+type JoinGameRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	PlayerId      string                 `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinGameRequest) Reset() {
+	*x = JoinGameRequest{}
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinGameRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinGameRequest) ProtoMessage() {}
+
+func (x *JoinGameRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinGameRequest.ProtoReflect.Descriptor instead.
+func (*JoinGameRequest) Descriptor() ([]byte, []int) {
+	return file_voodoo_v1_voodoo_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *JoinGameRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+func (x *JoinGameRequest) GetPlayerId() string {
+	if x != nil {
+		return x.PlayerId
+	}
+	return ""
+}
+
+type JoinGameResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *JoinGameResponse) Reset() {
+	*x = JoinGameResponse{}
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *JoinGameResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*JoinGameResponse) ProtoMessage() {}
+
+func (x *JoinGameResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use JoinGameResponse.ProtoReflect.Descriptor instead.
+func (*JoinGameResponse) Descriptor() ([]byte, []int) {
+	return file_voodoo_v1_voodoo_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *JoinGameResponse) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+type UpdateGameRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateGameRequest) Reset() {
+	*x = UpdateGameRequest{}
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateGameRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateGameRequest) ProtoMessage() {}
+
+func (x *UpdateGameRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateGameRequest.ProtoReflect.Descriptor instead.
+func (*UpdateGameRequest) Descriptor() ([]byte, []int) {
+	return file_voodoo_v1_voodoo_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UpdateGameRequest) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
+type UpdateGameResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	GameId        string                 `protobuf:"bytes,1,opt,name=game_id,json=gameId,proto3" json:"game_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateGameResponse) Reset() {
+	*x = UpdateGameResponse{}
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateGameResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateGameResponse) ProtoMessage() {}
+
+func (x *UpdateGameResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_voodoo_v1_voodoo_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateGameResponse.ProtoReflect.Descriptor instead.
+func (*UpdateGameResponse) Descriptor() ([]byte, []int) {
+	return file_voodoo_v1_voodoo_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *UpdateGameResponse) GetGameId() string {
+	if x != nil {
+		return x.GameId
+	}
+	return ""
+}
+
 var File_voodoo_v1_voodoo_proto protoreflect.FileDescriptor
 
 const file_voodoo_v1_voodoo_proto_rawDesc = "" +
@@ -108,9 +380,27 @@ const file_voodoo_v1_voodoo_proto_rawDesc = "" +
 	"\x16voodoo/v1/voodoo.proto\x12\tvoodoo.v1\"\x0f\n" +
 	"\rHealthRequest\"(\n" +
 	"\x0eHealthResponse\x12\x16\n" +
-	"\x06status\x18\x01 \x01(\tR\x06status2N\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"0\n" +
+	"\x11CreateGameRequest\x12\x1b\n" +
+	"\tplayer_id\x18\x01 \x01(\tR\bplayerId\"-\n" +
+	"\x12CreateGameResponse\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\"G\n" +
+	"\x0fJoinGameRequest\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\x12\x1b\n" +
+	"\tplayer_id\x18\x02 \x01(\tR\bplayerId\"+\n" +
+	"\x10JoinGameResponse\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\",\n" +
+	"\x11UpdateGameRequest\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId\"-\n" +
+	"\x12UpdateGameResponse\x12\x17\n" +
+	"\agame_id\x18\x01 \x01(\tR\x06gameId2\xa9\x02\n" +
 	"\rVoodooService\x12=\n" +
-	"\x06Health\x12\x18.voodoo.v1.HealthRequest\x1a\x19.voodoo.v1.HealthResponseB!Z\x1fvoodoo-case-study/gen/voodoo/v1b\x06proto3"
+	"\x06Health\x12\x18.voodoo.v1.HealthRequest\x1a\x19.voodoo.v1.HealthResponse\x12I\n" +
+	"\n" +
+	"CreateGame\x12\x1c.voodoo.v1.CreateGameRequest\x1a\x1d.voodoo.v1.CreateGameResponse\x12C\n" +
+	"\bJoinGame\x12\x1a.voodoo.v1.JoinGameRequest\x1a\x1b.voodoo.v1.JoinGameResponse\x12I\n" +
+	"\n" +
+	"UpdateGame\x12\x1c.voodoo.v1.UpdateGameRequest\x1a\x1d.voodoo.v1.UpdateGameResponseB!Z\x1fvoodoo-case-study/gen/voodoo/v1b\x06proto3"
 
 var (
 	file_voodoo_v1_voodoo_proto_rawDescOnce sync.Once
@@ -124,16 +414,28 @@ func file_voodoo_v1_voodoo_proto_rawDescGZIP() []byte {
 	return file_voodoo_v1_voodoo_proto_rawDescData
 }
 
-var file_voodoo_v1_voodoo_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_voodoo_v1_voodoo_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_voodoo_v1_voodoo_proto_goTypes = []any{
-	(*HealthRequest)(nil),  // 0: voodoo.v1.HealthRequest
-	(*HealthResponse)(nil), // 1: voodoo.v1.HealthResponse
+	(*HealthRequest)(nil),      // 0: voodoo.v1.HealthRequest
+	(*HealthResponse)(nil),     // 1: voodoo.v1.HealthResponse
+	(*CreateGameRequest)(nil),  // 2: voodoo.v1.CreateGameRequest
+	(*CreateGameResponse)(nil), // 3: voodoo.v1.CreateGameResponse
+	(*JoinGameRequest)(nil),    // 4: voodoo.v1.JoinGameRequest
+	(*JoinGameResponse)(nil),   // 5: voodoo.v1.JoinGameResponse
+	(*UpdateGameRequest)(nil),  // 6: voodoo.v1.UpdateGameRequest
+	(*UpdateGameResponse)(nil), // 7: voodoo.v1.UpdateGameResponse
 }
 var file_voodoo_v1_voodoo_proto_depIdxs = []int32{
 	0, // 0: voodoo.v1.VoodooService.Health:input_type -> voodoo.v1.HealthRequest
-	1, // 1: voodoo.v1.VoodooService.Health:output_type -> voodoo.v1.HealthResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: voodoo.v1.VoodooService.CreateGame:input_type -> voodoo.v1.CreateGameRequest
+	4, // 2: voodoo.v1.VoodooService.JoinGame:input_type -> voodoo.v1.JoinGameRequest
+	6, // 3: voodoo.v1.VoodooService.UpdateGame:input_type -> voodoo.v1.UpdateGameRequest
+	1, // 4: voodoo.v1.VoodooService.Health:output_type -> voodoo.v1.HealthResponse
+	3, // 5: voodoo.v1.VoodooService.CreateGame:output_type -> voodoo.v1.CreateGameResponse
+	5, // 6: voodoo.v1.VoodooService.JoinGame:output_type -> voodoo.v1.JoinGameResponse
+	7, // 7: voodoo.v1.VoodooService.UpdateGame:output_type -> voodoo.v1.UpdateGameResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -150,7 +452,7 @@ func file_voodoo_v1_voodoo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_voodoo_v1_voodoo_proto_rawDesc), len(file_voodoo_v1_voodoo_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
