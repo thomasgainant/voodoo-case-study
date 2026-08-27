@@ -19,17 +19,58 @@ Acceptance tests:
 
 ## How it has been built
 
-<AI>
-<Architecture>
-<Hash index>
+This is the code architecture which was decided:
+
+```mermaid
+flowchart TD
+    Client["gRPC Client"]
+
+    subgraph Router["Router (internal/router)"]
+        R["VoodooServiceServer\nRoutes RPCs · holds Sharder · holds Stats Store"]
+    end
+
+    subgraph Sharder["Sharder (internal/sharder)"]
+        S["Hash Index\ngameId → *Worker\n\nPending set\ngameId → struct{}"]
+    end
+
+    subgraph Pool["Worker Pool (internal/worker)"]
+        W1["Worker 0\nmap[gameId]*GameState"]
+        W2["Worker 1\nmap[gameId]*GameState"]
+        W3["Worker 2\nmap[gameId]*GameState"]
+        WN["Worker N\nmap[gameId]*GameState"]
+    end
+
+    Stats["Stats Store (internal/stats)\nplayer_id → wins/losses/draws"]
+
+    Client -->|"CreateGame / JoinGame\nUpdateGame / ListPendingGames\nGetPlayerStats"| R
+    R -->|"PickLeastLoaded()\nResolve(gameId)\nAddPending / RemovePending"| S
+    S -->|"FNV-1a hash → worker index\nor O(1) index lookup"| W1
+    S --> W2
+    S --> W3
+    S --> WN
+    R -->|"Record win/loss/draw\non game end"| Stats
+```
+
+The core technical challenge was identified to be the division of the workload between different workers to improve scalability, and having a O(1) access to these different shards.
+
+The first solution coming for such a demo app was using an hash table, like in old database systems. Instead of having an index corresponding to the position offset in a segment file on which we could find a record, the hash table would include pointers to a worker.
+This allows to have a registry directly in memory to route the requests directly to the correct workers handling a specific part of a shard (i.e. game state of an active game).
+
+The game logic and all the rules are then handled inside the worker, enabling a fully authoritative game architecture.
+
+The application has been built using AI (Copilot + Claude Sonnet 4.6) to speed up the process. Every single line of code has been reviewed before being accepted. An AGENTS.md file has been updated throughout the development of the application to help with further work on it.
 
 ## Tradeoffs
 
-
+- Using the hash table technique has the obvious drawback of having the whole table of games in memory. That means that the memory will be used relative to the number of registered games
+- That implies having to have a cleaning functionality checking which games are still active and finished or dumping the least used game states on disk and just keep the most used in memory (not yet implemented)
 
 ## What could be improved
 
-
+- There is currently no dynamic scaling of workers. Their fixed numbers will be very fast a problem. The Sharder needs to address that by adding or removing Workers dynamically. One solution is also to switch to a horizontal scaling infrastructure solution like Kubernetes to add or remove nodes which runs a dedicated Worker.
+- Having every game id on the hash table also could be improved by optimising index access with SST or B-Tree. The implies sorting of the game IDs would require some extra implementation regarding the maintaining of the hash table.
+- The game logic should be seperated from the Worker structure, with its own structure. Currently, this is ugly from a gameplay development perspective.
+- The router and sharder layers could probably be merged, if we wanted a cleaner code.
 
 ## Important prompts history
 
