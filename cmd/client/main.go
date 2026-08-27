@@ -90,4 +90,51 @@ func main() {
 		}
 		log.Printf("[%s] Marked cell %d — board: %v  winner: %q", m.player, m.cell, resp.Board, resp.Winner)
 	}
+
+	for _, playerID := range []string{"player-1", "player-2"} {
+		s, err := client.GetPlayerStats(ctx, &pb.GetPlayerStatsRequest{PlayerId: playerID})
+		if err != nil {
+			log.Fatalf("GetPlayerStats (%s) failed: %v", playerID, err)
+		}
+		log.Printf("[%s] stats — wins: %d  losses: %d  draws: %d", playerID, s.Wins, s.Losses, s.Draws)
+	}
+
+	// --- 4×4 game, win length 4 ---
+	log.Printf("\n[4×4 game] player-3 creates a 4×4 game with win length 4")
+	created4, err := client.CreateGame(ctx, &pb.CreateGameRequest{
+		PlayerId: "player-3",
+		Grid:     &pb.GridConfig{Width: 4, Height: 4, WinningLength: 4},
+	})
+	if err != nil {
+		log.Fatalf("[4×4] CreateGame failed: %v", err)
+	}
+	log.Printf("[player-3] Created 4×4 game %q", created4.GameId)
+
+	joined4, err := client.JoinGame(ctx, &pb.JoinGameRequest{GameId: created4.GameId, PlayerId: "player-4"})
+	if err != nil {
+		log.Fatalf("[4×4] JoinGame failed: %v", err)
+	}
+	log.Printf("[player-4] Joined 4×4 game %q", joined4.GameId)
+
+	// player-3 wins top row: cells 0,1,2,3; player-4 takes cells 4,5,6
+	type move4 struct {
+		player string
+		cell   int32
+	}
+	moves4 := []move4{
+		{"player-3", 0}, {"player-4", 4},
+		{"player-3", 1}, {"player-4", 5},
+		{"player-3", 2}, {"player-4", 6},
+		{"player-3", 3},
+	}
+	for _, m := range moves4 {
+		resp, err := client.UpdateGame(ctx, &pb.UpdateGameRequest{
+			GameId: created4.GameId, PlayerId: m.player, Cell: m.cell,
+		})
+		if err != nil {
+			log.Fatalf("[4×4] UpdateGame (%s, cell %d) failed: %v", m.player, m.cell, err)
+		}
+		log.Printf("[%s] Marked cell %d — board size: %d  winner: %q",
+			m.player, m.cell, len(resp.Board), resp.Winner)
+	}
 }

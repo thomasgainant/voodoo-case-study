@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"voodoo-case-study/internal/sharder"
+	"voodoo-case-study/internal/worker"
 )
 
 func TestResolveIsDeterministic(t *testing.T) {
@@ -64,9 +65,9 @@ func TestPickLeastLoadedReturnsWorkerWithFewestStates(t *testing.T) {
 	s := sharder.New(3)
 	workers := s.Workers()
 
-	workers[0].CreateGame("p")
-	workers[0].CreateGame("p") // 2 states
-	workers[1].CreateGame("p") // 1 state
+	workers[0].CreateGame("p", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
+	workers[0].CreateGame("p", worker.GridConfig{Width: 3, Height: 3, WinLen: 3}) // 2 states
+	workers[1].CreateGame("p", worker.GridConfig{Width: 3, Height: 3, WinLen: 3}) // 1 state
 	// workers[2] has 0 states — must be picked
 
 	got := s.PickLeastLoaded()
@@ -87,7 +88,7 @@ func TestPickLeastLoadedTieBreaksToFirstWorker(t *testing.T) {
 func TestRegisterOverridesHashBasedRouting(t *testing.T) {
 	s := sharder.New(4)
 	w := s.PickLeastLoaded()
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	s.Register(state.ID, w)
 
 	resolved := s.Resolve(state.ID)

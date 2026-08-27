@@ -12,12 +12,22 @@ service VoodooService {
   rpc JoinGame(JoinGameRequest) returns (JoinGameResponse);
   rpc UpdateGame(UpdateGameRequest) returns (UpdateGameResponse);
   rpc ListPendingGames(ListPendingGamesRequest) returns (ListPendingGamesResponse);
+  rpc GetPlayerStats(GetPlayerStatsRequest) returns (GetPlayerStatsResponse);
 }
 
 message HealthRequest {}
 message HealthResponse { string status = 1; }
 
-message CreateGameRequest { string player_id = 1; }
+message GridConfig {
+  int32 width = 1;          // number of columns
+  int32 height = 2;         // number of rows
+  int32 winning_length = 3; // consecutive marks needed to win
+}
+
+message CreateGameRequest {
+  string player_id = 1;
+  GridConfig grid = 2; // omit for default 3×3 with winning length 3
+}
 message CreateGameResponse { string game_id = 1; }
 
 message JoinGameRequest {
@@ -39,3 +49,10 @@ message UpdateGameResponse {
 
 message ListPendingGamesRequest {}
 message ListPendingGamesResponse { repeated string game_ids = 1; }
+
+message GetPlayerStatsRequest { string player_id = 1; }
+message GetPlayerStatsResponse {
+  int64 wins   = 1;
+  int64 losses = 2;
+  int64 draws  = 3;
+}

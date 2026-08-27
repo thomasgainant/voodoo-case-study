@@ -166,3 +166,13 @@ rpc ListPendingGames(ListPendingGamesRequest) returns (ListPendingGamesResponse)
 ```
 
 Returns the IDs of all games currently in the **waiting** state (one player, no second player yet). The Sharder maintains a `pending` set — a `map[string]struct{}` updated on every `CreateGame` and `JoinGame` — so this call is O(1) for membership and O(n) in the number of pending games for the list itself. `CreateGame` calls `sharder.AddPending`; a successful `JoinGame` calls `sharder.RemovePending`.
+
+### GetPlayerStats
+
+```
+rpc GetPlayerStats(GetPlayerStatsRequest) returns (GetPlayerStatsResponse)
+  GetPlayerStatsRequest  { string player_id }
+  GetPlayerStatsResponse { int64 wins, int64 losses, int64 draws }
+```
+
+Returns the lifetime win/loss/draw counts for a player. Counts are maintained by the Router in an `internal/stats.Store` — a thread-safe in-memory map keyed by `player_id`. The Router updates it at the end of every `UpdateGame` call that ends the game: it records a win and a loss for the two players on a decisive result, or a draw for both on a full board with no winner. Players who have never completed a game return all zeros.

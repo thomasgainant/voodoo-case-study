@@ -15,12 +15,13 @@ var ErrCellOccupied = errors.New("cell is already occupied")
 var ErrInvalidCell  = errors.New("cell index out of range")
 var ErrGameOver     = errors.New("game is already over")
 
-// winLines lists the eight winning lines on a 3×3 board (row-major, 0-indexed).
-var winLines = [8][3]int{
-	{0, 1, 2}, {3, 4, 5}, {6, 7, 8}, // rows
-	{0, 3, 6}, {1, 4, 7}, {2, 5, 8}, // cols
-	{0, 4, 8}, {2, 4, 6},             // diagonals
+// GridConfig defines the board dimensions and win condition.
+type GridConfig struct {
+	Width, Height, WinLen int
 }
+
+// defaultGrid is the classic 3×3 Tic-Tac-Toe configuration.
+var defaultGrid = GridConfig{Width: 3, Height: 3, WinLen: 3}
 
 // GameState holds the in-memory state for a single game.
 type GameState struct {
@@ -29,15 +30,22 @@ type GameState struct {
 	players     [2]string
 	playerCount int
 	currentTurn int          // index (0 or 1) of the player whose turn it is
-	board       [9]int8      // 0=empty, 1=players[0] mark, 2=players[1] mark
+	width       int
+	height      int
+	winLen      int
+	board       []int8       // 0=empty, 1=players[0] mark, 2=players[1] mark
 	winner      int8         // 0=ongoing, 1=players[0] won, 2=players[1] won, 3=draw
 	ready       chan struct{} // closed when both player slots are filled
 }
 
-func newGameState(id, firstPlayerID string) *GameState {
+func newGameState(id, firstPlayerID string, cfg GridConfig) *GameState {
 	g := &GameState{
 		ID:          id,
 		playerCount: 1,
+		width:       cfg.Width,
+		height:      cfg.Height,
+		winLen:      cfg.WinLen,
+		board:       make([]int8, cfg.Width*cfg.Height),
 		ready:       make(chan struct{}),
 	}
 	g.players[0] = firstPlayerID
@@ -57,7 +65,7 @@ func (g *GameState) AddPlayer(playerID string) error {
 	return nil
 }
 
-// TakeTurn places the current player's mark on cell (0-8) and detects win/draw.
+// TakeTurn places the current player's mark on cell and detects win/draw.
 func (g *GameState) TakeTurn(playerID string, cell int) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
@@ -70,7 +78,7 @@ func (g *GameState) TakeTurn(playerID string, cell int) error {
 	if g.players[g.currentTurn] != playerID {
 		return ErrNotYourTurn
 	}
-	if cell < 0 || cell > 8 {
+	if cell < 0 || cell >= g.width*g.height {
 		return ErrInvalidCell
 	}
 	if g.board[cell] != 0 {
@@ -80,7 +88,7 @@ func (g *GameState) TakeTurn(playerID string, cell int) error {
 	mark := int8(g.currentTurn + 1)
 	g.board[cell] = mark
 
-	if g.hasWon(mark) {
+	if g.hasWon(cell, mark) {
 		g.winner = mark
 	} else if g.isBoardFull() {
 		g.winner = 3 // draw
@@ -90,9 +98,28 @@ func (g *GameState) TakeTurn(playerID string, cell int) error {
 	return nil
 }
 
-func (g *GameState) hasWon(mark int8) bool {
-	for _, line := range winLines {
-		if g.board[line[0]] == mark && g.board[line[1]] == mark && g.board[line[2]] == mark {
+// hasWon checks whether the last mark placed at cell wins the game.
+// It scans all 4 axis directions through the placed cell.
+func (g *GameState) hasWon(cell int, mark int8) bool {
+	row := cell / g.width
+	col := cell % g.width
+	dirs := [4][2]int{{0, 1}, {1, 0}, {1, 1}, {1, -1}}
+	for _, d := range dirs {
+		count := 1
+		for _, sign := range []int{1, -1} {
+			for i := 1; ; i++ {
+				r := row + d[0]*sign*i
+				c := col + d[1]*sign*i
+				if r < 0 || r >= g.height || c < 0 || c >= g.width {
+					break
+				}
+				if g.board[r*g.width+c] != mark {
+					break
+				}
+				count++
+			}
+		}
+		if count >= g.winLen {
 			return true
 		}
 	}
@@ -108,11 +135,11 @@ func (g *GameState) isBoardFull() bool {
 	return true
 }
 
-// Board returns the 9-cell board with player IDs (empty string for empty cells).
-func (g *GameState) Board() [9]string {
+// Board returns the board cells with player IDs (empty string for empty cells).
+func (g *GameState) Board() []string {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	var out [9]string
+	out := make([]string, len(g.board))
 	for i, v := range g.board {
 		if v == 1 {
 			out[i] = g.players[0]
@@ -137,6 +164,13 @@ func (g *GameState) Winner() string {
 	default:
 		return ""
 	}
+}
+
+// Players returns both player IDs ([0] is the creator, [1] is the joiner).
+func (g *GameState) Players() [2]string {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.players
 }
 
 // WaitReady blocks until both players have joined or ctx is done.
@@ -167,9 +201,13 @@ func New(id int) *Worker {
 func (w *Worker) ID() int { return w.id }
 
 // CreateGame creates a new game state with playerID as the first player.
-func (w *Worker) CreateGame(playerID string) *GameState {
+// Pass a zero-value GridConfig to use the default 3×3 board with win length 3.
+func (w *Worker) CreateGame(playerID string, cfg GridConfig) *GameState {
+	if cfg.Width == 0 || cfg.Height == 0 || cfg.WinLen == 0 {
+		cfg = defaultGrid
+	}
 	id := fmt.Sprintf("game-%d-%d", w.id, w.nextID.Add(1))
-	state := newGameState(id, playerID)
+	state := newGameState(id, playerID, cfg)
 	w.mu.Lock()
 	w.states[id] = state
 	w.mu.Unlock()
@@ -219,4 +257,5 @@ func (w *Worker) StateCount() int {
 	defer w.mu.RUnlock()
 	return len(w.states)
 }
+
 

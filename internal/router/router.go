@@ -9,6 +9,7 @@ import (
 
 	pb "voodoo-case-study/gen/voodoo/v1"
 	"voodoo-case-study/internal/sharder"
+	"voodoo-case-study/internal/stats"
 	"voodoo-case-study/internal/worker"
 )
 
@@ -17,11 +18,13 @@ import (
 type Router struct {
 	pb.UnimplementedVoodooServiceServer
 	sharder *sharder.Sharder
+	stats   *stats.Store
 }
 
 func New() *Router {
 	return &Router{
 		sharder: sharder.New(8),
+		stats:   stats.New(),
 	}
 }
 
@@ -32,8 +35,12 @@ func (r *Router) Health(_ context.Context, _ *pb.HealthRequest) (*pb.HealthRespo
 // CreateGame picks the least-loaded worker, creates a game state with the first player, and
 // registers the game ID in the sharder so subsequent calls route to the same worker.
 func (r *Router) CreateGame(_ context.Context, req *pb.CreateGameRequest) (*pb.CreateGameResponse, error) {
+	cfg := worker.GridConfig{Width: 3, Height: 3, WinLen: 3}
+	if g := req.Grid; g != nil && g.Width > 0 && g.Height > 0 && g.WinningLength > 0 {
+		cfg = worker.GridConfig{Width: int(g.Width), Height: int(g.Height), WinLen: int(g.WinningLength)}
+	}
 	w := r.sharder.PickLeastLoaded()
-	state := w.CreateGame(req.PlayerId)
+	state := w.CreateGame(req.PlayerId, cfg)
 	r.sharder.Register(state.ID, w)
 	r.sharder.AddPending(state.ID)
 	return &pb.CreateGameResponse{GameId: state.ID}, nil
@@ -60,13 +67,37 @@ func (r *Router) UpdateGame(_ context.Context, req *pb.UpdateGameRequest) (*pb.U
 		return nil, status.Errorf(codes.NotFound, "%v", err)
 	}
 	board := state.Board()
+	winner := state.Winner()
+	if winner != "" {
+		players := state.Players()
+		if winner == "draw" {
+			r.stats.RecordDraw(players[0])
+			r.stats.RecordDraw(players[1])
+		} else {
+			loser := players[0]
+			if players[0] == winner {
+				loser = players[1]
+			}
+			r.stats.RecordWin(winner)
+			r.stats.RecordLoss(loser)
+		}
+	}
 	return &pb.UpdateGameResponse{
 		GameId: req.GameId,
-		Board:  board[:],
-		Winner: state.Winner(),
+		Board:  board,
+		Winner: winner,
 	}, nil
 }
 
 func (r *Router) ListPendingGames(_ context.Context, _ *pb.ListPendingGamesRequest) (*pb.ListPendingGamesResponse, error) {
 	return &pb.ListPendingGamesResponse{GameIds: r.sharder.ListPending()}, nil
+}
+
+func (r *Router) GetPlayerStats(_ context.Context, req *pb.GetPlayerStatsRequest) (*pb.GetPlayerStatsResponse, error) {
+	rec := r.stats.Get(req.PlayerId)
+	return &pb.GetPlayerStatsResponse{
+		Wins:   rec.Wins,
+		Losses: rec.Losses,
+		Draws:  rec.Draws,
+	}, nil
 }

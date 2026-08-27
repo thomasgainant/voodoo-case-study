@@ -19,7 +19,7 @@ func TestWorkerID(t *testing.T) {
 
 func TestCreateGameReturnsStateWithNonEmptyID(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	if state == nil {
 		t.Fatal("expected non-nil GameState")
 	}
@@ -30,8 +30,8 @@ func TestCreateGameReturnsStateWithNonEmptyID(t *testing.T) {
 
 func TestCreateGameGeneratesUniqueIDs(t *testing.T) {
 	w := worker.New(0)
-	s1 := w.CreateGame("p1")
-	s2 := w.CreateGame("p2")
+	s1 := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
+	s2 := w.CreateGame("p2", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	if s1.ID == s2.ID {
 		t.Errorf("expected distinct game IDs, got %q twice", s1.ID)
 	}
@@ -39,7 +39,7 @@ func TestCreateGameGeneratesUniqueIDs(t *testing.T) {
 
 func TestJoinGameAddsSecondPlayer(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	_, err := w.JoinGame(state.ID, "p2")
 	if err != nil {
 		t.Fatalf("JoinGame failed: %v", err)
@@ -48,7 +48,7 @@ func TestJoinGameAddsSecondPlayer(t *testing.T) {
 
 func TestJoinGameFailsWhenFull(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	_, err := w.JoinGame(state.ID, "p3")
@@ -67,7 +67,7 @@ func TestJoinGameFailsForUnknownGame(t *testing.T) {
 
 func TestWaitReadyUnblocksAfterJoin(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 
 	done := make(chan error, 1)
 	go func() {
@@ -85,7 +85,7 @@ func TestWaitReadyUnblocksAfterJoin(t *testing.T) {
 
 func TestWaitReadyReturnsContextError(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -104,7 +104,7 @@ func TestGetReturnsNilForMissingGameID(t *testing.T) {
 
 func TestGetReturnsStateAfterCreateGame(t *testing.T) {
 	w := worker.New(0)
-	created := w.CreateGame("p1")
+	created := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	if w.Get(created.ID) != created {
 		t.Error("Get should return the same pointer as CreateGame")
 	}
@@ -115,8 +115,8 @@ func TestStateCountReflectsCreatedGames(t *testing.T) {
 	if w.StateCount() != 0 {
 		t.Fatalf("expected 0 states, got %d", w.StateCount())
 	}
-	w.CreateGame("p1")
-	w.CreateGame("p2")
+	w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
+	w.CreateGame("p2", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	if w.StateCount() != 2 {
 		t.Errorf("expected 2 states, got %d", w.StateCount())
 	}
@@ -124,7 +124,7 @@ func TestStateCountReflectsCreatedGames(t *testing.T) {
 
 func TestUpdateGameFailsWhenGameNotReady(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	if _, err := w.UpdateGame(state.ID, "p1", 0); !errors.Is(err, worker.ErrGameNotReady) {
 		t.Errorf("expected ErrGameNotReady, got %v", err)
 	}
@@ -139,7 +139,7 @@ func TestUpdateGameFailsForUnknownGame(t *testing.T) {
 
 func TestUpdateGameFailsWhenNotPlayersTurn(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	if _, err := w.UpdateGame(state.ID, "p2", 0); !errors.Is(err, worker.ErrNotYourTurn) {
@@ -149,7 +149,7 @@ func TestUpdateGameFailsWhenNotPlayersTurn(t *testing.T) {
 
 func TestUpdateGameSucceedsForCurrentPlayer(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	if _, err := w.UpdateGame(state.ID, "p1", 0); err != nil {
@@ -159,7 +159,7 @@ func TestUpdateGameSucceedsForCurrentPlayer(t *testing.T) {
 
 func TestUpdateGameAlternatesTurns(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	// p1: 0, p2: 1, p1: 3, p2: 4 — no winning line
@@ -177,7 +177,7 @@ func TestUpdateGameAlternatesTurns(t *testing.T) {
 
 func TestUpdateGameFailsForOccupiedCell(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	w.UpdateGame(state.ID, "p1", 4) //nolint:errcheck
@@ -188,7 +188,7 @@ func TestUpdateGameFailsForOccupiedCell(t *testing.T) {
 
 func TestUpdateGameFailsForInvalidCell(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	if _, err := w.UpdateGame(state.ID, "p1", 9); !errors.Is(err, worker.ErrInvalidCell) {
@@ -198,7 +198,7 @@ func TestUpdateGameFailsForInvalidCell(t *testing.T) {
 
 func TestWinDetectionRow(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	// p1 wins top row: 0,1,2
@@ -215,7 +215,7 @@ func TestWinDetectionRow(t *testing.T) {
 
 func TestWinDetectionCol(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	// p1 wins left col: 0,3,6
@@ -232,7 +232,7 @@ func TestWinDetectionCol(t *testing.T) {
 
 func TestWinDetectionDiagonal(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	// p1 wins main diagonal: 0,4,8
@@ -249,7 +249,7 @@ func TestWinDetectionDiagonal(t *testing.T) {
 
 func TestDrawDetection(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	// Final board (no winning line):
@@ -274,7 +274,7 @@ func TestDrawDetection(t *testing.T) {
 
 func TestMovesRejectedAfterGameOver(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	// p1 wins: top row
@@ -291,7 +291,7 @@ func TestMovesRejectedAfterGameOver(t *testing.T) {
 
 func TestBoardReflectsMoves(t *testing.T) {
 	w := worker.New(0)
-	state := w.CreateGame("p1")
+	state := w.CreateGame("p1", worker.GridConfig{Width: 3, Height: 3, WinLen: 3})
 	w.JoinGame(state.ID, "p2") //nolint:errcheck
 
 	w.UpdateGame(state.ID, "p1", 4) //nolint:errcheck
@@ -308,3 +308,112 @@ func TestBoardReflectsMoves(t *testing.T) {
 		t.Errorf("expected cell 1 empty, got %q", board[1])
 	}
 }
+
+func TestWinDetectionRowOnLargeGrid(t *testing.T) {
+	// 4×4 grid, win length 4: p1 wins by filling the top row (cells 0–3)
+	w := worker.New(0)
+	cfg := worker.GridConfig{Width: 4, Height: 4, WinLen: 4}
+	state := w.CreateGame("p1", cfg)
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	w.UpdateGame(state.ID, "p1", 0) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 4) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 1) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 5) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 2) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 6) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 3) //nolint:errcheck
+
+	if state.Winner() != "p1" {
+		t.Errorf("expected winner p1, got %q", state.Winner())
+	}
+}
+
+func TestWinDetectionColOnLargeGrid(t *testing.T) {
+	// 4×4 grid, win length 4: p1 wins column 0 (cells 0,4,8,12)
+	w := worker.New(0)
+	cfg := worker.GridConfig{Width: 4, Height: 4, WinLen: 4}
+	state := w.CreateGame("p1", cfg)
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	w.UpdateGame(state.ID, "p1", 0)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 1)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 4)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 5)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 8)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 9)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 12) //nolint:errcheck
+
+	if state.Winner() != "p1" {
+		t.Errorf("expected winner p1, got %q", state.Winner())
+	}
+}
+
+func TestWinDetectionDiagonalOnLargeGrid(t *testing.T) {
+	// 4×4 grid, win length 4: p1 wins main diagonal (cells 0,5,10,15)
+	w := worker.New(0)
+	cfg := worker.GridConfig{Width: 4, Height: 4, WinLen: 4}
+	state := w.CreateGame("p1", cfg)
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	w.UpdateGame(state.ID, "p1", 0)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 1)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 5)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 2)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 10) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 3)  //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 15) //nolint:errcheck
+
+	if state.Winner() != "p1" {
+		t.Errorf("expected winner p1, got %q", state.Winner())
+	}
+}
+
+func TestThreeInARowNotWinOnWinLength4Grid(t *testing.T) {
+	// 4×4 grid, win length 4: three marks in a row must not trigger a win
+	w := worker.New(0)
+	cfg := worker.GridConfig{Width: 4, Height: 4, WinLen: 4}
+	state := w.CreateGame("p1", cfg)
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	w.UpdateGame(state.ID, "p1", 0) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 4) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 1) //nolint:errcheck
+	w.UpdateGame(state.ID, "p2", 5) //nolint:errcheck
+	w.UpdateGame(state.ID, "p1", 2) //nolint:errcheck
+
+	if state.Winner() != "" {
+		t.Errorf("expected no winner after 3 in a row on win-4 grid, got %q", state.Winner())
+	}
+}
+
+func TestInvalidCellOnNonSquareGrid(t *testing.T) {
+	// 5×3 grid has 15 cells (0–14); cell 15 is out of range
+	w := worker.New(0)
+	cfg := worker.GridConfig{Width: 5, Height: 3, WinLen: 4}
+	state := w.CreateGame("p1", cfg)
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	if _, err := w.UpdateGame(state.ID, "p1", 15); !errors.Is(err, worker.ErrInvalidCell) {
+		t.Errorf("expected ErrInvalidCell for cell 15 on 5×3 grid, got %v", err)
+	}
+}
+
+func TestBoardSizeMatchesGridConfig(t *testing.T) {
+	// A 4×5 grid should produce a 20-cell board
+	w := worker.New(0)
+	cfg := worker.GridConfig{Width: 4, Height: 5, WinLen: 3}
+	state := w.CreateGame("p1", cfg)
+	w.JoinGame(state.ID, "p2") //nolint:errcheck
+
+	w.UpdateGame(state.ID, "p1", 0) //nolint:errcheck
+
+	board := state.Board()
+	if len(board) != 20 {
+		t.Errorf("expected board size 20 for 4×5 grid, got %d", len(board))
+	}
+	if board[0] != "p1" {
+		t.Errorf("expected board[0]=p1, got %q", board[0])
+	}
+}
+
