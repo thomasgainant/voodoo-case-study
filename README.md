@@ -1,4 +1,4 @@
-# Voodoo Tic-Tac-Toe case study
+# Voodoo Tic-Tac-Toe case study - Thomas Gainant
 
 ## Requirements
 
