@@ -23,7 +23,7 @@ type Router struct {
 
 func New() *Router {
 	return &Router{
-		sharder: sharder.New(8),
+		sharder: sharder.New(8, 10_000),
 		stats:   stats.New(),
 	}
 }

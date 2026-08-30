@@ -80,11 +80,11 @@ The application has been built using AI (Copilot + Claude Sonnet 4.6) to speed u
 
 ## What could be improved
 
-- There is currently no dynamic scaling of workers. Their fixed numbers will be very fast a problem. The Sharder needs to address that by adding or removing Workers dynamically. One solution is also to switch to a horizontal scaling infrastructure solution like Kubernetes to add or remove nodes which runs a dedicated Worker.
+- There is currently only an dynamic upscaling of workers. Their numbers will always grow higher. The Sharder needs to address that by removing Workers dynamically if they have no workload. One solution is also to switch to a horizontal scaling infrastructure solution like Kubernetes to add or remove nodes which runs a dedicated Worker.
 - Having every game id on the hash table also could be improved by optimising index access with SST or B-Tree. The implies sorting of the game IDs would require some extra implementation regarding the maintaining of the hash table.
 - The game logic should be seperated from the Worker structure, with its own structure. Currently, this is ugly from a gameplay development perspective.
 - The router and sharder layers could probably be merged, if we wanted a cleaner code.
-- Load testing using k6, to verify the scalability of the system and detect the bottlenecks.
+- Use of a channel per worker for communication to remove locks
 
 ## Important prompts history
 
@@ -189,3 +189,13 @@ Here is the list of the important prompts I used to accelerate the development:
 ### Player statistics
 
 > I want to have another endpoint so every players can retrieve their win-lose-draw statistics.
+
+### Improving sharding
+
+> After load testing the app, it seems that handling that much players gives a response time of up to three seconds for handling the move of a player. This is way too long.
+
+> As a consequence, we need to optimize the way the sharder distributes the workload, and especially move away from a fixed pool of Workers.
+
+> We need to be able to dynamically scale this pool of Workers to handle the workload.
+
+> What are the best strategy that I have to achieve this?

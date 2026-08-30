@@ -109,11 +109,13 @@ High-volume requests are distributed across Workers by a `Sharder` (`internal/sh
 
 ### Sharder (`internal/sharder`)
 
-The Sharder holds a fixed pool of Workers and a hash index — a `map[string]*Worker` that stores each seen `gameId` as a direct pointer to its assigned Worker in memory, mirroring the hash index pattern from database systems.
+The Sharder holds a dynamically sized pool of Workers and a hash index — a `map[string]*Worker` that stores each seen `gameId` as a direct pointer to its assigned Worker in memory, mirroring the hash index pattern from database systems.
 
-On first resolution, `gameId` is hashed with FNV-1a and mapped to a Worker via `hash % numWorkers`. The result is cached in the index so all subsequent calls for the same `gameId` are a single O(1) map lookup under a shared read lock. The pool size is fixed at construction; resizing would require rehashing the entire index.
+On first resolution, `gameId` is hashed with FNV-1a and mapped to a Worker via `hash % numWorkers`. The result is cached in the index so all subsequent calls for the same `gameId` are a single O(1) map lookup under a shared read lock.
 
-The Router (`internal/router`) owns a `*Sharder` instance (8 workers by default). When a future RPC carries a `gameId`, the router resolves the target Worker with `r.sharder.Resolve(req.GameId)`.
+The pool grows automatically. `New(numWorkers, maxLoad int)` sets both the initial worker count and the per-worker game-count ceiling. Whenever `PickLeastLoaded` finds that every worker has reached `maxLoad` games, it spawns a new Worker and appends it to the pool. Because existing `gameId`s are pinned in the index, no rehashing is needed — new Workers only ever receive new games. The spawn path upgrades from a read lock to a write lock and re-checks the threshold to prevent duplicate spawns under concurrent `CreateGame` calls.
+
+The Router (`internal/router`) owns a `*Sharder` instance constructed with 8 initial workers and a `maxLoad` of 10 000 games per worker. When an RPC carries a `gameId`, the router resolves the target Worker with `r.sharder.Resolve(req.GameId)`.
 
 ### Worker (`internal/worker`)
 

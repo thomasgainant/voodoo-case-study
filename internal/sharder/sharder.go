@@ -22,9 +22,10 @@ type Sharder struct {
 	index   map[string]*worker.Worker
 	pending map[string]struct{} // set of game IDs waiting for a second player
 	mu      sync.RWMutex
+	maxLoad int // spawn a new worker when the least-loaded reaches this game count
 }
 
-func New(numWorkers int) *Sharder {
+func New(numWorkers, maxLoad int) *Sharder {
 	workers := make([]*worker.Worker, numWorkers)
 	for i := range workers {
 		workers[i] = worker.New(i)
@@ -33,6 +34,7 @@ func New(numWorkers int) *Sharder {
 		workers: workers,
 		index:   make(map[string]*worker.Worker),
 		pending: make(map[string]struct{}),
+		maxLoad: maxLoad,
 	}
 }
 
@@ -58,9 +60,12 @@ func (s *Sharder) Resolve(gameID string) *worker.Worker {
 	return w
 }
 
-// Workers returns the list of active Workers.
+// Workers returns the current list of active Workers.
 func (s *Sharder) Workers() []*worker.Worker {
-	return s.workers
+	s.mu.RLock()
+	w := s.workers
+	s.mu.RUnlock()
+	return w
 }
 
 // Register pins gameID to w in the index so that Resolve always routes to the correct worker.
@@ -72,7 +77,28 @@ func (s *Sharder) Register(gameID string, w *worker.Worker) {
 }
 
 // PickLeastLoaded returns the Worker with the fewest active game states.
+// If every worker is at or above maxLoad, a new worker is spawned.
 func (s *Sharder) PickLeastLoaded() *worker.Worker {
+	s.mu.RLock()
+	best := s.leastLoaded()
+	s.mu.RUnlock()
+	if best.StateCount() < s.maxLoad {
+		return best
+	}
+	// All workers are at capacity — upgrade to write lock to spawn.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	best = s.leastLoaded()
+	if best.StateCount() < s.maxLoad {
+		return best // another goroutine already spawned while we waited
+	}
+	w := worker.New(len(s.workers))
+	s.workers = append(s.workers, w)
+	return w
+}
+
+// leastLoaded returns the worker with the lowest StateCount; must be called under s.mu.
+func (s *Sharder) leastLoaded() *worker.Worker {
 	best := s.workers[0]
 	for _, w := range s.workers[1:] {
 		if w.StateCount() < best.StateCount() {
