@@ -1,4 +1,4 @@
-.PHONY: run client test test/unit test/acceptance generate
+.PHONY: run client test test/unit test/acceptance test/load generate
 
 PROTOC_PATH := $(LOCALAPPDATA)/protoc/bin
 GOPATH_BIN := $(shell go env GOPATH)/bin
@@ -24,4 +24,8 @@ test/unit:
 
 test/acceptance:
 	go test -tags acceptance ./acceptance/...
+
+# Requires a running server (make run). SERVER_ADDR defaults to localhost:8080
+test/load:
+	k6 run load/load_test.js
 

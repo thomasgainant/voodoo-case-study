@@ -80,6 +80,29 @@ make run
 make client
 ```
 
+### Load testing
+
+Load tests live in `load/load_test.js` and are driven by [K6](https://k6.io). The script simulates **1 000 000 players** (500 000 complete games) using K6's `shared-iterations` executor: a fixed pool of 5 000 VUs works through 500 000 iterations, each iteration covering a full game lifecycle for two unique players.
+
+Each iteration:
+1. `CreateGame` — player 1 creates a 3×3 game.
+2. `JoinGame` — player 2 joins.
+3. `UpdateGame` × 7 — moves are played in cell order 0–6; player 1 wins via the 2-4-6 diagonal.
+
+Custom counters reported at the end: `games_won`, `games_drawn`, `game_errors`.
+
+**Thresholds** (test fails if breached):
+- `grpc_req_duration` p(95) < 200 ms
+- `game_errors` count < 1 000
+
+```bash
+# Requires a running server (make run)
+make test/load
+
+# Target a different server
+SERVER_ADDR=10.0.0.1:8080 k6 run load/load_test.js
+```
+
 ## Workload division layer
 
 High-volume requests are distributed across Workers by a `Sharder` (`internal/sharder`). Each incoming request carries a `gameId`; the Sharder maps it to a specific Worker and keeps that mapping stable for the lifetime of the process.

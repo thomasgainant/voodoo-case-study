@@ -1,5 +1,15 @@
 # Voodoo Tic-Tac-Toe case study
 
+## Requirements
+
+Golang >= 1.25
+Make
+
+### Optional
+
+grafana/k6 v2.2.0
+
+
 ## How to run
 
 Run the server:
@@ -16,6 +26,9 @@ Unit tests:
 
 Acceptance tests:
 ``make test/acceptance``
+
+Load tests:
+``make test/load``
 
 ## How it has been built
 
